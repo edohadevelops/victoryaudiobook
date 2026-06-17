@@ -18,6 +18,9 @@ const READING_QUOTES = [
 ];
 
 const VOICE_OPTIONS = [
+  { id: "en-US-Neural2-F", label: "Naomi", desc: "Warm American female", lang: "en-US", gender: "FEMALE" },
+  { id: "en-US-Neural2-H", label: "Serena", desc: "Clear American female", lang: "en-US", gender: "FEMALE" },
+  { id: "en-GB-Wavenet-C", label: "Victoria", desc: "Elegant British female", lang: "en-GB", gender: "FEMALE" },
   { id: "en-US-Neural2-D", label: "Marcus", desc: "Warm American male", lang: "en-US", gender: "MALE" },
   { id: "en-US-Neural2-I", label: "DeShawn", desc: "Deep rich American male", lang: "en-US", gender: "MALE" },
   { id: "en-US-Neural2-J", label: "Jordan", desc: "Clear articulate American male", lang: "en-US", gender: "MALE" },
@@ -27,9 +30,6 @@ const VOICE_OPTIONS = [
   { id: "en-GB-Wavenet-B", label: "Edmund", desc: "Deep British male", lang: "en-GB", gender: "MALE" },
   { id: "en-GB-Wavenet-D", label: "Reginald", desc: "Smooth British male", lang: "en-GB", gender: "MALE" },
   { id: "en-AU-Wavenet-B", label: "Bruce", desc: "Deep Australian male", lang: "en-AU", gender: "MALE" },
-  { id: "en-US-Neural2-F", label: "Naomi", desc: "Warm American female", lang: "en-US", gender: "FEMALE" },
-  { id: "en-US-Neural2-H", label: "Serena", desc: "Clear American female", lang: "en-US", gender: "FEMALE" },
-  { id: "en-GB-Wavenet-C", label: "Victoria", desc: "Elegant British female", lang: "en-GB", gender: "FEMALE" },
 ];
 
 function chunkText(text) {
@@ -160,7 +160,7 @@ export default function App() {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [pregenProgress, setPregenProgress] = useState(null);
-  const [selectedVoice, setSelectedVoice] = useState(VOICE_OPTIONS[0]);
+  const [selectedVoice, setSelectedVoice] = useState(VOICE_OPTIONS.find(v => v.id === "en-US-Neural2-F"));
   const [showVoiceDropdown, setShowVoiceDropdown] = useState(false);
   const [showRegenConfirm, setShowRegenConfirm] = useState(false);
   const [quoteIdx] = useState(() => Math.floor(Math.random() * READING_QUOTES.length));
