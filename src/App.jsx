@@ -386,6 +386,32 @@ body{background:var(--bg);}
 .tt-thumb.active{background:var(--green);color:#000;}
 .tt-thumb:not(.active){color:var(--t3);}
 
+/* ── Text view (lyrics-style) ── */
+.text-view{
+  position:fixed;inset:0;z-index:150;
+  background:var(--bg);overflow-y:auto;
+  padding:24px 24px 120px;
+  animation:fadeIn .22s var(--ease);
+}
+.text-view::-webkit-scrollbar{width:3px;}
+.text-view::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.text-chunk{
+  font-family:'Crimson Pro',Georgia,serif;
+  font-size:1.35rem;line-height:1.95;
+  padding:28px 0;border-bottom:1px solid var(--border);
+  cursor:pointer;transition:color .25s;
+  position:relative;
+}
+.text-chunk.active{color:var(--t1);}
+.text-chunk:not(.active){color:var(--t3);}
+.text-chunk:hover:not(.active){color:var(--t2);}
+.text-chunk-num{
+  font-family:'Inter',system-ui,sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;
+  color:var(--green);margin-bottom:12px;display:flex;align-items:center;gap:8px;
+}
+.text-chunk-num .bar{width:24px;height:2px;background:var(--green);border-radius:2px;}
+
 /* ── Waveform ── */
 .wave{display:flex;align-items:center;gap:2.5px;height:44px;justify-content:center;}
 .wave-bar{
@@ -614,6 +640,89 @@ function MiniPlayer({book,isPlaying,progress,onToggle,onOpen}) {
   );
 }
 
+function TextViewPanel({chunks,currentChunk,isPlaying,onClose,onJumpTo,book,theme}) {
+  const activeRef=useRef(null);
+
+  // Scroll active chunk into view whenever it changes
+  useEffect(()=>{
+    if(activeRef.current){
+      activeRef.current.scrollIntoView({behavior:"smooth",block:"center"});
+    }
+  },[currentChunk]);
+
+  return (
+    <div className="text-view">
+      {/* Sticky header */}
+      <div style={{position:"sticky",top:0,zIndex:10,
+        background:"var(--bg)",paddingBottom:16,marginBottom:8,
+        borderBottom:"1px solid var(--border)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div>
+            <p style={{fontFamily:"Inter,system-ui,sans-serif",fontSize:10,fontWeight:700,
+              letterSpacing:".12em",textTransform:"uppercase",color:"var(--green)",marginBottom:4}}>
+              Now reading
+            </p>
+            <p style={{fontFamily:"Inter,system-ui,sans-serif",fontSize:15,fontWeight:700,
+              color:"var(--t1)",lineHeight:1.2}}>{book.title}</p>
+          </div>
+          <button onClick={onClose}
+            style={{background:"var(--bg3)",border:"1px solid var(--border)",borderRadius:10,
+              color:"var(--t2)",cursor:"pointer",padding:9,display:"flex",
+              alignItems:"center",justifyContent:"center",
+              transition:"border-color .2s,color .2s"}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor="var(--borderh)";e.currentTarget.style.color="var(--t1)";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="var(--border)";e.currentTarget.style.color="var(--t2)";}}>
+            <X size={15}/>
+          </button>
+        </div>
+        {/* Mini progress bar */}
+        <div style={{height:2,background:"var(--bg3)",borderRadius:2,marginTop:14,overflow:"hidden"}}>
+          <div style={{height:"100%",borderRadius:2,background:"var(--green)",
+            width:`${((currentChunk+1)/chunks.length)*100}%`,
+            transition:"width .5s var(--ease)"}}/>
+        </div>
+        <p style={{fontFamily:"Inter,system-ui,sans-serif",fontSize:10,color:"var(--t3)",
+          fontWeight:600,marginTop:6}}>
+          Part {currentChunk+1} of {chunks.length}
+        </p>
+      </div>
+
+      {/* Chunks */}
+      {chunks.map((text,i)=>{
+        const isActive=i===currentChunk;
+        return (
+          <div key={i} ref={isActive?activeRef:null}
+            className={`text-chunk ${isActive?"active":""}`}
+            onClick={()=>onJumpTo(i)}>
+            {isActive&&(
+              <div className="text-chunk-num">
+                <div className="bar"/>
+                <span>Part {i+1}</span>
+                {isPlaying&&<span style={{display:"flex",alignItems:"center",gap:3,
+                  fontWeight:400,color:"var(--green)",fontStyle:"italic"}}>
+                  — playing
+                </span>}
+              </div>
+            )}
+            <p style={{whiteSpace:"pre-wrap",lineHeight:"inherit",
+              fontSize:isActive?"1.4rem":"1.25rem",
+              transition:"font-size .3s var(--ease)",
+              fontWeight:isActive?400:400}}>
+              {text}
+            </p>
+            {!isActive&&(
+              <p style={{fontFamily:"Inter,system-ui,sans-serif",fontSize:10,
+                color:"var(--t3)",fontWeight:600,marginTop:10,opacity:.6}}>
+                Part {i+1} · tap to jump here
+              </p>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function BottomNav({screen,setScreen,finishedCount}) {
   const tabs=[
     {id:"library",Icon:Library,label:"Library"},
@@ -673,6 +782,7 @@ export default function App() {
   const [pregenProgress,setPregenProgress]=useState(null);
   const [voice,setVoice]=useState(VOICES[0]);
   const [showVoiceDrop,setShowVoiceDrop]=useState(false);
+  const [showTextView,setShowTextView]=useState(false);
   const [showRegenConfirm,setShowRegenConfirm]=useState(false);
   const [showBookComplete,setShowBookComplete]=useState(false);
   const [journals,setJournals]=useState({});
@@ -1441,15 +1551,37 @@ export default function App() {
       {/* ════ PLAYER ═════════════════════════════════════════════════════════ */}
       {screen==="player"&&activeBook&&(
         <div style={{maxWidth:480,margin:"0 auto",padding:"20px 16px",position:"relative",zIndex:1}}>
-          {/* Dynamic bg based on book color */}
+          {/* Dynamic bg */}
           <div style={{position:"fixed",inset:0,
-            background:`radial-gradient(ellipse at top,rgba(${theme==="dark"?"29,185,84":"29,185,84"},.1) 0%,var(--bg) 65%)`,
+            background:`radial-gradient(ellipse at top,rgba(29,185,84,.1) 0%,var(--bg) 65%)`,
             pointerEvents:"none",zIndex:0}}/>
 
-          <button className="btn btn-icon" style={{marginBottom:24,position:"relative"}}
-            onClick={()=>{setScreen(fromScreen);audioRef.current&&!isPlaying&&null;fetchBooks();}}>
-            <ArrowLeft size={16}/>
-          </button>
+          {/* ── Text / Lyrics view overlay */}
+          {showTextView&&chunks.length>0&&(
+            <TextViewPanel
+              chunks={chunks}
+              currentChunk={currentChunk}
+              isPlaying={isPlaying}
+              onClose={()=>setShowTextView(false)}
+              onJumpTo={idx=>{playChunk(idx);}}
+              book={activeBook}
+              theme={theme}
+            />
+          )}
+
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,position:"relative"}}>
+            <button className="btn btn-icon"
+              onClick={()=>{setScreen(fromScreen);fetchBooks();}}>
+              <ArrowLeft size={16}/>
+            </button>
+            <button className="btn btn-icon"
+              onClick={()=>setShowTextView(v=>!v)}
+              title="Text view"
+              style={{borderColor:showTextView?"var(--green)":"var(--border)",
+                color:showTextView?"var(--green)":"var(--t2)"}}>
+              <BookOpen size={15}/>
+            </button>
+          </div>
 
           {/* Cover art */}
           <div style={{display:"flex",justifyContent:"center",marginBottom:28,position:"relative"}}>
