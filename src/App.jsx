@@ -94,6 +94,30 @@ async function extractTextFromPDF(file) {
   });
 }
 
+function splitToLines(text, maxChars=130) {
+  if(!text) return [];
+  const sentences=text.split(/(?<=[.!?…])\s+/).filter(s=>s.trim());
+  const lines=[];
+  for(const s of sentences){
+    const t=s.trim();
+    if(!t) continue;
+    if(t.length<=maxChars){lines.push(t);continue;}
+    // break long sentence at punctuation near midpoint, else at word boundary
+    const mid=Math.ceil(t.length/2);
+    const comma=t.indexOf(',',mid-30);
+    if(comma>0&&comma<mid+40){
+      lines.push(t.slice(0,comma+1).trim());
+      lines.push(t.slice(comma+1).trim());
+    }else{
+      const words=t.split(' ');
+      const half=Math.ceil(words.length/2);
+      lines.push(words.slice(0,half).join(' '));
+      if(words.slice(half).join(' ').trim()) lines.push(words.slice(half).join(' ').trim());
+    }
+  }
+  return lines.filter(l=>l.length>0);
+}
+
 async function ttsGenerate(text, bookId, idx, voice, force=false) {
   if(!force){
     const {data:c}=await supabase.from("audio_chunks").select("audio_path")
@@ -386,31 +410,39 @@ body{background:var(--bg);}
 .tt-thumb.active{background:var(--green);color:#000;}
 .tt-thumb:not(.active){color:var(--t3);}
 
-/* ── Text view (lyrics-style) ── */
-.text-view{
+/* ── Lyrics view (Spotify-style) ── */
+.lyrics-root{
   position:fixed;inset:0;z-index:150;
-  background:var(--bg);overflow-y:auto;
-  padding:24px 24px 120px;
+  background:var(--bg);
+  display:flex;flex-direction:column;overflow:hidden;
   animation:fadeIn .22s var(--ease);
 }
-.text-view::-webkit-scrollbar{width:3px;}
-.text-view::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
-.text-chunk{
+.lyrics-scroller{
+  flex:1;overflow-y:scroll;overflow-x:hidden;
+  scrollbar-width:none;-ms-overflow-style:none;
+  overscroll-behavior:none;
+}
+.lyrics-scroller::-webkit-scrollbar{display:none;}
+.lyrics-line{
   font-family:'Crimson Pro',Georgia,serif;
-  font-size:1.35rem;line-height:1.95;
-  padding:28px 0;border-bottom:1px solid var(--border);
-  cursor:pointer;transition:color .25s;
-  position:relative;
+  line-height:1.55;
+  padding:14px 28px;
+  transition:font-size .45s var(--ease),opacity .45s var(--ease),color .45s var(--ease);
+  cursor:default;
 }
-.text-chunk.active{color:var(--t1);}
-.text-chunk:not(.active){color:var(--t3);}
-.text-chunk:hover:not(.active){color:var(--t2);}
-.text-chunk-num{
-  font-family:'Inter',system-ui,sans-serif;font-size:10px;font-weight:700;
-  letter-spacing:.1em;text-transform:uppercase;
-  color:var(--green);margin-bottom:12px;display:flex;align-items:center;gap:8px;
+.lyrics-line.active{color:var(--t1);}
+.lyrics-line:not(.active){color:var(--t3);cursor:pointer;}
+.lyrics-line:not(.active):hover{color:var(--t2);}
+.lyrics-mask-top{
+  position:absolute;top:0;left:0;right:0;height:38%;
+  background:linear-gradient(to bottom,var(--bg) 0%,transparent 100%);
+  pointer-events:none;z-index:2;
 }
-.text-chunk-num .bar{width:24px;height:2px;background:var(--green);border-radius:2px;}
+.lyrics-mask-bot{
+  position:absolute;bottom:0;left:0;right:0;height:38%;
+  background:linear-gradient(to top,var(--bg) 0%,transparent 100%);
+  pointer-events:none;z-index:2;
+}
 
 /* ── Waveform ── */
 .wave{display:flex;align-items:center;gap:2.5px;height:44px;justify-content:center;}
@@ -640,85 +672,131 @@ function MiniPlayer({book,isPlaying,progress,onToggle,onOpen}) {
   );
 }
 
-function TextViewPanel({chunks,currentChunk,isPlaying,onClose,onJumpTo,book,theme}) {
-  const activeRef=useRef(null);
+function LyricsView({chunks,currentChunk,currentTime,duration,isPlaying,onClose,onPlayPause,onPrev,onNext,onJumpTo,book}) {
+  const scrollRef=useRef(null);
+  const lineRefs=useRef([]);
 
-  // Scroll active chunk into view whenever it changes
+  // Split current chunk into display-sized lines
+  const lines=useMemo(()=>splitToLines(chunks[currentChunk]||""),[chunks,currentChunk]);
+
+  // Estimate which line is being spoken based on playback position within chunk
+  const activeLine=useMemo(()=>{
+    if(!duration||lines.length===0) return 0;
+    return Math.min(Math.floor((currentTime/duration)*lines.length),lines.length-1);
+  },[currentTime,duration,lines.length]);
+
+  // Programmatically center the active line — no manual scroll needed
   useEffect(()=>{
-    if(activeRef.current){
-      activeRef.current.scrollIntoView({behavior:"smooth",block:"center"});
-    }
-  },[currentChunk]);
+    const scroller=scrollRef.current;
+    const el=lineRefs.current[activeLine];
+    if(!scroller||!el) return;
+    const scrollerMid=scroller.offsetHeight/2;
+    const elMid=el.offsetTop+el.offsetHeight/2;
+    scroller.scrollTo({top:elMid-scrollerMid,behavior:"smooth"});
+  },[activeLine,currentChunk]);
+
+  // Lock out manual scroll — the view is fully automatic
+  useEffect(()=>{
+    const el=scrollRef.current;
+    if(!el) return;
+    const block=e=>e.preventDefault();
+    el.addEventListener("wheel",block,{passive:false});
+    el.addEventListener("touchmove",block,{passive:false});
+    return()=>{el.removeEventListener("wheel",block);el.removeEventListener("touchmove",block);};
+  },[]);
+
+  // Reset lineRefs array size when lines change
+  useEffect(()=>{lineRefs.current=lineRefs.current.slice(0,lines.length);},[lines]);
+
+  const overallPct=((currentChunk+(duration?currentTime/duration:0))/Math.max(chunks.length,1))*100;
 
   return (
-    <div className="text-view">
-      {/* Sticky header */}
-      <div style={{position:"sticky",top:0,zIndex:10,
-        background:"var(--bg)",paddingBottom:16,marginBottom:8,
+    <div className="lyrics-root">
+      {/* ── Header */}
+      <div style={{padding:"20px 24px 14px",flexShrink:0,
+        display:"flex",justifyContent:"space-between",alignItems:"center",
         borderBottom:"1px solid var(--border)"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div>
-            <p style={{fontFamily:"Inter,system-ui,sans-serif",fontSize:10,fontWeight:700,
-              letterSpacing:".12em",textTransform:"uppercase",color:"var(--green)",marginBottom:4}}>
-              Now reading
-            </p>
-            <p style={{fontFamily:"Inter,system-ui,sans-serif",fontSize:15,fontWeight:700,
-              color:"var(--t1)",lineHeight:1.2}}>{book.title}</p>
-          </div>
-          <button onClick={onClose}
-            style={{background:"var(--bg3)",border:"1px solid var(--border)",borderRadius:10,
-              color:"var(--t2)",cursor:"pointer",padding:9,display:"flex",
-              alignItems:"center",justifyContent:"center",
-              transition:"border-color .2s,color .2s"}}
-            onMouseEnter={e=>{e.currentTarget.style.borderColor="var(--borderh)";e.currentTarget.style.color="var(--t1)";}}
-            onMouseLeave={e=>{e.currentTarget.style.borderColor="var(--border)";e.currentTarget.style.color="var(--t2)";}}>
-            <X size={15}/>
-          </button>
+        <div style={{minWidth:0,flex:1}}>
+          <p className="lbl" style={{color:"var(--green)",margin:"0 0 4px"}}>Now reading</p>
+          <p style={{fontFamily:"Inter,system-ui,sans-serif",fontSize:15,fontWeight:700,
+            color:"var(--t1)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+            {book.title}
+          </p>
         </div>
-        {/* Mini progress bar */}
-        <div style={{height:2,background:"var(--bg3)",borderRadius:2,marginTop:14,overflow:"hidden"}}>
-          <div style={{height:"100%",borderRadius:2,background:"var(--green)",
-            width:`${((currentChunk+1)/chunks.length)*100}%`,
-            transition:"width .5s var(--ease)"}}/>
-        </div>
-        <p style={{fontFamily:"Inter,system-ui,sans-serif",fontSize:10,color:"var(--t3)",
-          fontWeight:600,marginTop:6}}>
-          Part {currentChunk+1} of {chunks.length}
-        </p>
+        <button className="btn btn-icon" onClick={onClose} style={{marginLeft:14,flexShrink:0}}>
+          <X size={15}/>
+        </button>
       </div>
 
-      {/* Chunks */}
-      {chunks.map((text,i)=>{
-        const isActive=i===currentChunk;
-        return (
-          <div key={i} ref={isActive?activeRef:null}
-            className={`text-chunk ${isActive?"active":""}`}
-            onClick={()=>onJumpTo(i)}>
-            {isActive&&(
-              <div className="text-chunk-num">
-                <div className="bar"/>
-                <span>Part {i+1}</span>
-                {isPlaying&&<span style={{display:"flex",alignItems:"center",gap:3,
-                  fontWeight:400,color:"var(--green)",fontStyle:"italic"}}>
-                  — playing
-                </span>}
+      {/* ── Lyrics window (no scroll, fully automated) */}
+      <div style={{flex:1,position:"relative",overflow:"hidden"}}>
+        <div className="lyrics-mask-top"/>
+
+        <div ref={scrollRef} className="lyrics-scroller">
+          {/* Top spacer so first line can reach center */}
+          <div style={{height:"46vh"}}/>
+
+          {lines.map((line,i)=>{
+            const dist=Math.abs(i-activeLine);
+            const isActive=i===activeLine;
+            return (
+              <div key={i}
+                ref={el=>{lineRefs.current[i]=el;}}
+                className={`lyrics-line ${isActive?"active":""}`}
+                onClick={()=>{if(!isActive) onJumpTo(currentChunk);}}
+                style={{
+                  fontSize:isActive?"2rem":dist===1?"1.35rem":"1.1rem",
+                  opacity:isActive?1:dist===1?.38:dist===2?.18:.08,
+                  fontWeight:isActive?600:400,
+                }}>
+                {line}
               </div>
-            )}
-            <p style={{whiteSpace:"pre-wrap",lineHeight:"inherit",
-              fontSize:isActive?"1.4rem":"1.25rem",
-              transition:"font-size .3s var(--ease)",
-              fontWeight:isActive?400:400}}>
-              {text}
-            </p>
-            {!isActive&&(
-              <p style={{fontFamily:"Inter,system-ui,sans-serif",fontSize:10,
-                color:"var(--t3)",fontWeight:600,marginTop:10,opacity:.6}}>
-                Part {i+1} · tap to jump here
-              </p>
-            )}
-          </div>
-        );
-      })}
+            );
+          })}
+
+          {/* Bottom spacer */}
+          <div style={{height:"46vh"}}/>
+        </div>
+
+        <div className="lyrics-mask-bot"/>
+
+        {/* Part indicator — top-right corner inside the window */}
+        <div style={{position:"absolute",top:16,right:20,zIndex:3,
+          fontFamily:"Inter,system-ui,sans-serif",fontSize:10,fontWeight:700,
+          letterSpacing:".1em",textTransform:"uppercase",color:"var(--t3)"}}>
+          {currentChunk+1} / {chunks.length}
+        </div>
+      </div>
+
+      {/* ── Mini controls pinned at bottom */}
+      <div style={{flexShrink:0,padding:"14px 24px 28px",
+        borderTop:"1px solid var(--border)"}}>
+        {/* Overall progress bar */}
+        <div style={{height:3,background:"var(--bg3)",borderRadius:3,
+          marginBottom:18,overflow:"hidden"}}>
+          <div style={{height:"100%",background:"var(--green)",borderRadius:3,
+            width:`${overallPct}%`,transition:"width .5s linear"}}/>
+        </div>
+        {/* Controls */}
+        <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:18}}>
+          <button className="btn btn-icon"
+            onClick={()=>onPrev()} disabled={currentChunk===0}
+            style={{width:44,height:44,borderRadius:"50%"}}>
+            <SkipBack size={19}/>
+          </button>
+          <button className="play-btn" onClick={onPlayPause}
+            style={{width:60,height:60}}>
+            {isPlaying
+              ?<Pause size={24} fill="#000"/>
+              :<Play size={24} fill="#000" style={{marginLeft:3}}/>}
+          </button>
+          <button className="btn btn-icon"
+            onClick={()=>onNext()} disabled={currentChunk===chunks.length-1}
+            style={{width:44,height:44,borderRadius:"50%"}}>
+            <SkipForward size={19}/>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1556,16 +1634,20 @@ export default function App() {
             background:`radial-gradient(ellipse at top,rgba(29,185,84,.1) 0%,var(--bg) 65%)`,
             pointerEvents:"none",zIndex:0}}/>
 
-          {/* ── Text / Lyrics view overlay */}
+          {/* ── Lyrics view overlay */}
           {showTextView&&chunks.length>0&&(
-            <TextViewPanel
+            <LyricsView
               chunks={chunks}
               currentChunk={currentChunk}
+              currentTime={currentTime}
+              duration={duration}
               isPlaying={isPlaying}
               onClose={()=>setShowTextView(false)}
-              onJumpTo={idx=>{playChunk(idx);}}
+              onPlayPause={handlePlay}
+              onPrev={()=>{if(currentChunk>0) playChunk(currentChunk-1);}}
+              onNext={()=>{if(currentChunk<chunks.length-1) playChunk(currentChunk+1);}}
+              onJumpTo={idx=>playChunk(idx)}
               book={activeBook}
-              theme={theme}
             />
           )}
 
