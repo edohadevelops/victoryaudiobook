@@ -769,15 +769,18 @@ export default function App() {
       const {file,text,chunks:c}=uploadPending;
       const fp=`${Date.now()}_${file.name}`;
       await supabase.storage.from("books").upload(fp,file);
-      const {data:bd,error:be}=await supabase.from("books").insert({
-        title:uploadForm.title||file.name.replace(/\.pdf$/i,""),
-        author:uploadForm.author||"Unknown Author",
-        category:uploadForm.category,
-        file_path:fp,
-        word_count:text.split(/\s+/).filter(Boolean).length,
-        chunk_count:c.length,
-        status:"reading",
-      }).select().single();
+      // Insert core columns first (always exist)
+      const baseInsert={title:uploadForm.title||file.name.replace(/\.pdf$/i,""),
+        file_path:fp,word_count:text.split(/\s+/).filter(Boolean).length,
+        chunk_count:c.length,status:"reading"};
+      // Try with optional columns; fall back to base if schema missing
+      let bd,be;
+      ({data:bd,error:be}=await supabase.from("books").insert({
+        ...baseInsert,author:uploadForm.author||"Unknown Author",category:uploadForm.category,
+      }).select().single());
+      if(be&&(be.message?.includes("author")||be.message?.includes("category"))){
+        ({data:bd,error:be}=await supabase.from("books").insert(baseInsert).select().single());
+      }
       if(be) throw be;
       await supabase.from("reading_progress").insert({book_id:bd.id,current_chunk:0,current_position:0});
       await fetchBooks();
@@ -806,6 +809,7 @@ export default function App() {
   const saveEdit=async()=>{
     if(!editBook) return;
     setSavingEdit(true);
+    setError("");
     try{
       let cover_url=editBook.cover_url||null;
       if(editCoverFile){
@@ -817,20 +821,44 @@ export default function App() {
           cover_url=urlData.publicUrl;
         }
       }
-      const payload={
-        title:editForm.title||editBook.title,
-        author:editForm.author||"Unknown Author",
-        category:editForm.category,
+
+      // Build payload and strip columns that don't exist in the schema yet.
+      // Try the full payload first; on a schema-cache error, retry with only title.
+      const fullPayload={title:editForm.title||editBook.title};
+      // Conditionally add optional columns — silently skip if they're missing
+      const tryColumns=async(cols)=>{
+        const p={...fullPayload,...cols};
+        if(cover_url!==editBook.cover_url) p.cover_url=cover_url;
+        const {error}=await supabase.from("books").update(p).eq("id",editBook.id);
+        return error;
       };
-      if(cover_url!==editBook.cover_url) payload.cover_url=cover_url;
-      const {error:uErr}=await supabase.from("books").update(payload).eq("id",editBook.id);
-      if(uErr) throw uErr;
-      await fetchBooks();
-      if(activeBook?.id===editBook.id){
-        setActiveBook(p=>({...p,...payload,cover_url}));
+
+      let err=await tryColumns({author:editForm.author||"Unknown Author",category:editForm.category});
+      if(err){
+        // Retry without author if that column is missing
+        if(err.message?.toLowerCase().includes("author")){
+          err=await tryColumns({category:editForm.category});
+        }
+        // Retry without category too if still failing
+        if(err?.message?.toLowerCase().includes("category")){
+          err=await tryColumns({});
+        }
+        if(err) throw err;
       }
+
+      const merged={...fullPayload,author:editForm.author||"Unknown Author",
+        category:editForm.category,cover_url};
+      await fetchBooks();
+      if(activeBook?.id===editBook.id) setActiveBook(p=>({...p,...merged}));
       setEditBook(null);
-    }catch(e){setError(e.message);}
+    }catch(e){
+      const msg=e.message||String(e);
+      if(msg.includes("author")||msg.includes("category")||msg.includes("cover_url")){
+        setError("Missing columns in database. Run this SQL in Supabase → SQL Editor:\n\nALTER TABLE books ADD COLUMN IF NOT EXISTS author TEXT DEFAULT 'Unknown Author';\nALTER TABLE books ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'Uncategorized';\nALTER TABLE books ADD COLUMN IF NOT EXISTS cover_url TEXT;");
+      }else{
+        setError(msg);
+      }
+    }
     setSavingEdit(false);
   };
 
