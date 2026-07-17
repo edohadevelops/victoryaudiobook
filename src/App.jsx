@@ -1,13 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 import {
-  Library, Archive, Target, Sparkles,
-  Play, Pause, SkipBack, SkipForward, Rewind, FastForward,
-  ArrowLeft, Search, ChevronDown, ChevronUp, X, Trash2,
-  Zap, Download, RefreshCw, CheckCircle2,
-  Lightbulb, Star, Rocket, PenLine,
-  Mic2, BookOpen, Clock, TrendingUp, Trophy,
-  Upload, RotateCcw, Tag, User, BarChart2,
+  Library, Archive, Target, Sparkles, Play, Pause,
+  SkipBack, SkipForward, Rewind, FastForward, ArrowLeft,
+  Search, X, Trash2, Zap, Download, RefreshCw, CheckCircle2,
+  Lightbulb, Star, Rocket, PenLine, Mic2, BookOpen, Clock,
+  TrendingUp, Trophy, Upload, RotateCcw, Tag, User, BarChart2,
+  ChevronDown, ChevronUp, Edit2, Sun, Moon, Camera, ImagePlus,
 } from "lucide-react";
 
 const SUPABASE_URL = "https://qnkmneedjzdjnxmgavli.supabase.co";
@@ -21,68 +20,56 @@ const CATEGORIES = ["Uncategorized","Fiction","Non-Fiction","Self-Help","Busines
 const MONTH_LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
 const QUOTES = [
-  { text: "A reader lives a thousand lives before she dies.", author: "George R.R. Martin" },
-  { text: "There is no friend as loyal as a book.", author: "Ernest Hemingway" },
-  { text: "Books are a uniquely portable magic.", author: "Stephen King" },
-  { text: "She is too fond of books, and it has turned her brain.", author: "Louisa May Alcott" },
-  { text: "A book is a dream you hold in your hands.", author: "Neil Gaiman" },
-  { text: "Not all those who wander are lost — some are between chapters.", author: "Unknown" },
-  { text: "Reading is the quietest form of courage.", author: "Unknown" },
+  { text:"A reader lives a thousand lives before she dies.", author:"George R.R. Martin" },
+  { text:"There is no friend as loyal as a book.", author:"Ernest Hemingway" },
+  { text:"Books are a uniquely portable magic.", author:"Stephen King" },
+  { text:"She is too fond of books, and it has turned her brain.", author:"Louisa May Alcott" },
+  { text:"A book is a dream you hold in your hands.", author:"Neil Gaiman" },
+  { text:"Reading is the quietest form of courage.", author:"Unknown" },
 ];
 
 const VOICES = [
   { id:"en-US-Neural2-F", label:"Naomi",    desc:"Warm American female",    lang:"en-US", gender:"FEMALE" },
   { id:"en-US-Neural2-H", label:"Serena",   desc:"Clear American female",   lang:"en-US", gender:"FEMALE" },
   { id:"en-GB-Wavenet-C", label:"Victoria", desc:"Elegant British female",  lang:"en-GB", gender:"FEMALE" },
-  { id:"en-US-Neural2-D", label:"Marcus",   desc:"Warm American male",      lang:"en-US", gender:"MALE"   },
-  { id:"en-US-Neural2-I", label:"DeShawn",  desc:"Deep rich American male", lang:"en-US", gender:"MALE"   },
-  { id:"en-US-Neural2-J", label:"Jordan",   desc:"Clear American male",     lang:"en-US", gender:"MALE"   },
-  { id:"en-US-Wavenet-B", label:"Franklin", desc:"Authoritative male",      lang:"en-US", gender:"MALE"   },
-  { id:"en-US-Wavenet-I", label:"Isaiah",   desc:"Rich deep male",          lang:"en-US", gender:"MALE"   },
-  { id:"en-GB-Wavenet-B", label:"Edmund",   desc:"Deep British male",       lang:"en-GB", gender:"MALE"   },
-  { id:"en-AU-Wavenet-B", label:"Bruce",    desc:"Deep Australian male",    lang:"en-AU", gender:"MALE"   },
+  { id:"en-US-Neural2-D", label:"Marcus",   desc:"Warm American male",      lang:"en-US", gender:"MALE" },
+  { id:"en-US-Neural2-I", label:"DeShawn",  desc:"Deep rich American male", lang:"en-US", gender:"MALE" },
+  { id:"en-US-Wavenet-B", label:"Franklin", desc:"Authoritative male",      lang:"en-US", gender:"MALE" },
+  { id:"en-GB-Wavenet-B", label:"Edmund",   desc:"Deep British male",       lang:"en-GB", gender:"MALE" },
+  { id:"en-AU-Wavenet-B", label:"Bruce",    desc:"Deep Australian male",    lang:"en-AU", gender:"MALE" },
 ];
 
 const PALETTES = [
-  ["#4c1d95","#7c3aed"],["#1e1b4b","#4338ca"],["#0c4a6e","#0ea5e9"],
-  ["#064e3b","#10b981"],["#7f1d1d","#ef4444"],["#78350f","#f59e0b"],
-  ["#831843","#ec4899"],["#1e3a5f","#3b82f6"],["#3b0764","#a855f7"],
-  ["#14532d","#22c55e"],["#0f172a","#6366f1"],["#1c1917","#78716c"],
+  ["#0d3320","#1a6640"],["#0a1f3d","#1a4080"],["#2a0a3d","#6020a0"],
+  ["#3d1a0a","#804020"],["#3d0a1a","#802040"],["#1a1a0a","#404020"],
+  ["#0a2a2a","#205050"],["#1a0a2a","#402060"],["#2a1a0a","#604020"],
+  ["#0d2a1a","#1a5533"],["#0a0d2a","#1a2080"],["#2a0a10","#801020"],
 ];
 
-const CONFETTI = Array.from({length:55},(_,i) => ({
-  left:(i*37+11)%100, delay:(i*0.12)%3,
-  dur:2.5+(i*0.07)%2, size:5+(i*3)%8,
-  color:["#c084fc","#7c3aed","#a78bfa","#e879f9","#f0abfc","#fbbf24","#34d399","#60a5fa"][i%8],
-  rot:(i*47)%360, shape:i%3,
+const CONFETTI = Array.from({length:55},(_,i)=>({
+  left:(i*37+11)%100, delay:(i*0.12)%3, dur:2.5+(i*0.07)%2,
+  size:5+(i*3)%8, rot:(i*47)%360, shape:i%3,
+  color:["#1DB954","#17a348","#21cf5f","#ffffff","#a0f0b8","#fbbf24","#60a5fa","#f0abfc"][i%8],
 }));
 
-const STARS_BG = Array.from({length:70},(_,i) => ({
-  left:(i*73+11)%100, top:(i*47+23)%100,
-  size: i%4===0 ? 1.5 : 0.8,
-  op: 0.05+(i%6)*0.04,
-  dur: 2+(i*0.23)%3,
-  delay:(i*0.31)%5,
-}));
+const WAVE_H = [20,38,15,52,28,44,12,35,58,22,40,50,14,42,26,32,55,18,38,12,48,25,42,15,32,52,20,38,48,14,42,26,34,52,20,36,14,46,24,42];
 
-const WAVEFORM_HEIGHTS = [20,38,15,52,28,44,12,35,58,22,40,50,14,42,26,32,55,18,38,12,48,25,42,15,32,52,20,38,48,14,42,26,34,52,20,36,14,46,24,42];
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
 function bookGradient(title) {
-  let h = 0;
-  for (let i = 0; i < title.length; i++) h = title.charCodeAt(i)+((h<<5)-h);
+  let h=0;
+  for(let i=0;i<title.length;i++) h=title.charCodeAt(i)+((h<<5)-h);
   return PALETTES[Math.abs(h)%PALETTES.length];
 }
 
 function chunkText(text) {
-  const paras = text.split(/\n+/).filter(p=>p.trim());
+  const paras=text.split(/\n+/).filter(p=>p.trim());
   const chunks=[]; let cur="";
-  for (const p of paras) {
-    if ((cur+" "+p).trim().length>CHUNK_SIZE) { if(cur.trim()) chunks.push(cur.trim()); cur=p; }
-    else cur = cur ? cur+"\n\n"+p : p;
+  for(const p of paras){
+    if((cur+" "+p).trim().length>CHUNK_SIZE){if(cur.trim())chunks.push(cur.trim());cur=p;}
+    else cur=cur?cur+"\n\n"+p:p;
   }
-  if (cur.trim()) chunks.push(cur.trim());
+  if(cur.trim())chunks.push(cur.trim());
   return chunks;
 }
 
@@ -90,10 +77,10 @@ async function extractTextFromPDF(file) {
   return new Promise((res,rej)=>{
     const r=new FileReader();
     r.onload=async e=>{
-      try {
-        const pdfjsLib=window.pdfjsLib;
-        pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-        const pdf=await pdfjsLib.getDocument({data:new Uint8Array(e.target.result)}).promise;
+      try{
+        const lib=window.pdfjsLib;
+        lib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+        const pdf=await lib.getDocument({data:new Uint8Array(e.target.result)}).promise;
         let text="";
         for(let i=1;i<=pdf.numPages;i++){
           const pg=await pdf.getPage(i);
@@ -101,23 +88,23 @@ async function extractTextFromPDF(file) {
           text+=ct.items.map(it=>it.str).join(" ")+"\n\n";
         }
         res(text.trim());
-      } catch(err){rej(err);}
+      }catch(err){rej(err);}
     };
     r.onerror=rej; r.readAsArrayBuffer(file);
   });
 }
 
 async function ttsGenerate(text, bookId, idx, voice, force=false) {
-  if (!force) {
+  if(!force){
     const {data:c}=await supabase.from("audio_chunks").select("audio_path")
       .eq("book_id",bookId).eq("chunk_index",idx).eq("voice_id",voice.id).single();
-    if (c?.audio_path) {
+    if(c?.audio_path){
       const {data}=supabase.storage.from("audio").getPublicUrl(c.audio_path);
       return data.publicUrl;
     }
   }
   const r=await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${API_KEY}`,{
-    method:"POST", headers:{"Content-Type":"application/json"},
+    method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({input:{text},voice:{languageCode:voice.lang,name:voice.id,ssmlGender:voice.gender},
       audioConfig:{audioEncoding:"MP3",speakingRate:0.95,pitch:-1.0}}),
   });
@@ -131,84 +118,423 @@ async function ttsGenerate(text, bookId, idx, voice, force=false) {
   return u.publicUrl;
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Design system CSS ───────────────────────────────────────────────────────
 
-const Starfield = () => (
+const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html{scroll-behavior:smooth;}
+
+:root{
+  --green:#1DB954;
+  --green-dim:rgba(29,185,84,0.15);
+  --green-glow:rgba(29,185,84,0.28);
+  --green-dark:#17a348;
+  --sp:cubic-bezier(.34,1.56,.64,1);
+  --ease:cubic-bezier(.16,1,.3,1);
+}
+
+/* ── Dark (default) ── */
+.dark{
+  --bg:#0a0a0a;
+  --bg2:#111111;
+  --bg3:rgba(255,255,255,0.04);
+  --bg3h:rgba(255,255,255,0.08);
+  --border:rgba(255,255,255,0.07);
+  --borderh:rgba(255,255,255,0.15);
+  --t1:#ffffff;
+  --t2:rgba(255,255,255,0.62);
+  --t3:rgba(255,255,255,0.32);
+  --shadow:0 8px 32px rgba(0,0,0,0.55);
+  --shadow2:0 20px 60px rgba(0,0,0,0.7);
+}
+
+/* ── Light ── */
+.light{
+  --bg:#f5f5f5;
+  --bg2:#ffffff;
+  --bg3:rgba(0,0,0,0.03);
+  --bg3h:rgba(0,0,0,0.06);
+  --border:rgba(0,0,0,0.07);
+  --borderh:rgba(0,0,0,0.15);
+  --t1:#0a0a0a;
+  --t2:rgba(0,0,0,0.6);
+  --t3:rgba(0,0,0,0.35);
+  --shadow:0 8px 32px rgba(0,0,0,0.1);
+  --shadow2:0 20px 60px rgba(0,0,0,0.15);
+}
+
+body{background:var(--bg);}
+
+/* ── Keyframes ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes scaleIn{from{opacity:0;transform:scale(0.88)}to{opacity:1;transform:scale(1)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes waveBar{0%,100%{transform:scaleY(.25);transform-origin:bottom}50%{transform:scaleY(1);transform-origin:bottom}}
+@keyframes shimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
+@keyframes confettiFall{to{transform:translateY(105vh) rotate(720deg);opacity:0}}
+@keyframes miniSlide{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes greenPulse{0%,100%{box-shadow:0 0 0 0 var(--green-glow)}50%{box-shadow:0 0 0 10px transparent}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes twinkle{0%,100%{opacity:.08}50%{opacity:.35}}
+
+.fade-up{animation:fadeUp .38s var(--ease) both;}
+.scale-in{animation:scaleIn .3s var(--sp) both;}
+
+/* ── Typography ── */
+.t-ui{font-family:'Inter',system-ui,sans-serif;}
+.t-serif{font-family:'Crimson Pro',Georgia,serif;}
+
+/* ── Card ── */
+.card{
+  background:var(--bg3);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:20px;
+  transition:border-color .2s,background .2s,transform .2s var(--sp),box-shadow .2s;
+}
+.card-hover:hover{
+  background:var(--bg3h);
+  border-color:var(--borderh);
+  transform:translateY(-2px);
+  box-shadow:var(--shadow);
+}
+
+/* ── Buttons ── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  border:none;border-radius:10px;cursor:pointer;
+  font-family:'Inter',system-ui,sans-serif;font-size:12px;font-weight:600;
+  transition:transform .15s var(--sp),opacity .15s,background .15s,box-shadow .15s;
+  user-select:none;
+}
+.btn:active{transform:scale(.93)!important;}
+.btn-green{
+  background:var(--green);color:#000;padding:11px 22px;border-radius:50px;
+  letter-spacing:.02em;
+}
+.btn-green:hover{background:var(--green-dark);box-shadow:0 4px 20px var(--green-glow);}
+.btn-ghost{
+  background:var(--bg3);border:1px solid var(--border);
+  color:var(--t2);padding:9px 16px;
+}
+.btn-ghost:hover{border-color:var(--borderh);color:var(--t1);}
+.btn-icon{
+  background:var(--bg3);border:1px solid var(--border);
+  color:var(--t2);padding:9px;border-radius:10px;
+}
+.btn-icon:hover{border-color:var(--borderh);color:var(--t1);}
+.btn-danger{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#ef4444;padding:9px 16px;}
+.btn-danger:hover{background:rgba(239,68,68,.16);}
+
+/* ── Play button ── */
+.play-btn{
+  width:64px;height:64px;border-radius:50%;background:var(--green);
+  color:#000;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .2s var(--sp),box-shadow .2s;
+  animation:greenPulse 2.5s ease infinite;
+}
+.play-btn:hover{transform:scale(1.08);box-shadow:0 8px 32px var(--green-glow);}
+.play-btn:active{transform:scale(.92);}
+.play-btn:disabled{background:var(--bg3);color:var(--t3);cursor:not-allowed;animation:none;}
+
+/* ── Book card ── */
+.book-card{
+  display:flex;gap:14px;align-items:flex-start;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:14px;padding:14px;cursor:pointer;position:relative;
+  transition:background .2s,border-color .2s,transform .18s var(--sp),box-shadow .2s;
+}
+.book-card:hover{background:var(--bg3h);border-color:var(--borderh);transform:translateY(-2px);box-shadow:var(--shadow);}
+.book-card .del-btn{
+  position:absolute;top:10px;right:10px;
+  background:none;border:none;color:var(--t3);cursor:pointer;padding:5px;border-radius:7px;
+  opacity:0;transition:opacity .2s,color .2s;
+}
+.book-card .edit-btn{
+  position:absolute;top:10px;right:36px;
+  background:none;border:none;color:var(--t3);cursor:pointer;padding:5px;border-radius:7px;
+  opacity:0;transition:opacity .2s,color .2s;
+}
+.book-card:hover .del-btn,.book-card:hover .edit-btn{opacity:1;}
+.book-card .del-btn:hover{color:#ef4444;}
+.book-card .edit-btn:hover{color:var(--green);}
+
+/* ── Chip ── */
+.chip{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:50px;padding:6px 14px;cursor:pointer;white-space:nowrap;
+  font-family:'Inter',system-ui,sans-serif;font-size:11px;font-weight:500;color:var(--t2);
+  transition:all .18s var(--sp);
+}
+.chip:hover{border-color:var(--borderh);color:var(--t1);transform:translateY(-1px);}
+.chip.on{background:var(--green-dim);border-color:var(--green);color:var(--green);font-weight:700;}
+
+/* ── Progress ── */
+.prog{height:4px;background:var(--bg3);border-radius:4px;overflow:hidden;}
+.prog-fill{height:100%;background:var(--green);border-radius:4px;transition:width .4s linear;}
+.prog.thick{height:5px;}
+.prog.scrub{height:4px;cursor:pointer;}
+.prog.scrub .prog-fill{transition:none;}
+
+/* ── Input / Textarea ── */
+.inp{
+  background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+  color:var(--t1);font-family:'Inter',system-ui,sans-serif;font-size:13px;
+  padding:11px 14px;width:100%;outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+.inp:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-dim);}
+.inp::placeholder{color:var(--t3);}
+.ta{resize:vertical;min-height:88px;line-height:1.7;font-size:14px;}
+.sel{cursor:pointer;}
+
+/* ── Search ── */
+.search-wrap{position:relative;}
+.search-wrap .ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;}
+.search-inp{padding-left:38px!important;}
+
+/* ── Label ── */
+.lbl{font-family:'Inter',system-ui,sans-serif;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);display:block;margin-bottom:7px;}
+
+/* ── Skeleton ── */
+.skel{
+  background:linear-gradient(90deg,var(--bg3) 25%,var(--bg3h) 50%,var(--bg3) 75%);
+  background-size:600px 100%;animation:shimmer 1.5s infinite;border-radius:8px;
+}
+.skel-cover{width:72px;height:100px;border-radius:10px;flex-shrink:0;}
+.skel-line{height:10px;margin-bottom:8px;}
+.skel-line.w80{width:80%;}
+.skel-line.w50{width:50%;}
+.skel-line.w30{width:30%;}
+
+/* ── Mini-player ── */
+.mini-player{
+  position:fixed;bottom:70px;left:0;right:0;z-index:90;
+  background:var(--bg2);border-top:1px solid var(--border);
+  animation:miniSlide .28s var(--sp);
+}
+.mini-inner{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 16px;cursor:pointer;
+}
+
+/* ── Bottom nav ── */
+.bnav{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  background:var(--bg2);border-top:1px solid var(--border);
+  display:flex;height:70px;
+}
+.bnav-tab{
+  flex:1;background:none;border:none;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  color:var(--t3);transition:color .2s;position:relative;
+}
+.bnav-tab.on{color:var(--green);}
+.bnav-tab span{font-family:'Inter',system-ui,sans-serif;font-size:9px;font-weight:600;letter-spacing:.04em;}
+.bnav-indicator{
+  position:absolute;top:0;height:2px;border-radius:0 0 3px 3px;
+  background:var(--green);transition:left .32s var(--sp),width .32s var(--sp);
+}
+
+/* ── Voice dropdown ── */
+.voice-drop{
+  position:absolute;top:calc(100%+6px);left:0;right:0;z-index:60;
+  background:var(--bg2);border:1px solid var(--border);border-radius:14px;
+  overflow:hidden;animation:slideDown .2s var(--sp);
+  box-shadow:var(--shadow2);max-height:260px;overflow-y:auto;
+}
+.voice-opt{padding:11px 14px;cursor:pointer;transition:background .15s;}
+.voice-opt:hover{background:var(--bg3h);}
+.voice-opt.on{background:var(--green-dim);}
+.voice-drop::-webkit-scrollbar{width:3px;}
+.voice-drop::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* ── Modal overlay ── */
+.modal-wrap{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,.75);backdrop-filter:blur(16px);
+  display:flex;align-items:flex-end;justify-content:center;
+}
+.modal-box{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:24px 24px 0 0;padding:24px;width:100%;max-width:540px;
+  animation:slideUp .3s var(--sp);max-height:92vh;overflow-y:auto;
+}
+.modal-box::-webkit-scrollbar{width:3px;}
+.modal-box::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* ── Theme toggle ── */
+.theme-toggle{
+  background:var(--bg3);border:1px solid var(--border);border-radius:50px;
+  padding:6px;cursor:pointer;display:flex;align-items:center;gap:4px;
+  transition:border-color .2s;
+}
+.theme-toggle:hover{border-color:var(--borderh);}
+.tt-thumb{
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .3s var(--sp),background .3s;
+}
+.tt-thumb.active{background:var(--green);color:#000;}
+.tt-thumb:not(.active){color:var(--t3);}
+
+/* ── Waveform ── */
+.wave{display:flex;align-items:center;gap:2.5px;height:44px;justify-content:center;}
+.wave-bar{
+  width:3px;border-radius:4px;transform-origin:bottom;
+  transition:background .4s;
+}
+
+/* ── Drop zone ── */
+.dropzone{
+  border:1.5px dashed var(--border);border-radius:16px;
+  padding:32px 24px;text-align:center;cursor:pointer;
+  transition:all .25s;background:var(--bg3);
+}
+.dropzone:hover,.dropzone.over{
+  border-color:var(--green);background:var(--green-dim);
+}
+
+/* ── Cover uploader in edit modal ── */
+.cover-upload-area{
+  width:100%;height:180px;border-radius:14px;overflow:hidden;
+  position:relative;cursor:pointer;
+  border:1.5px dashed var(--border);
+  transition:border-color .2s;
+}
+.cover-upload-area:hover{border-color:var(--green);}
+.cover-upload-overlay{
+  position:absolute;inset:0;
+  background:rgba(0,0,0,.55);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  opacity:0;transition:opacity .2s;
+}
+.cover-upload-area:hover .cover-upload-overlay{opacity:1;}
+
+/* ── Waveform wrapped card ── */
+.wrapped-hero{
+  border-radius:20px;padding:28px;position:relative;overflow:hidden;margin-bottom:12px;
+}
+.wrapped-hero::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.05) 0%,transparent 60%);
+  pointer-events:none;
+}
+
+/* ── Speed btn ── */
+.spd{
+  background:none;border:1px solid var(--border);border-radius:8px;
+  color:var(--t3);cursor:pointer;font-family:'Inter',system-ui,sans-serif;
+  font-size:10px;font-weight:600;padding:5px 9px;
+  transition:all .15s;
+}
+.spd:hover{border-color:var(--borderh);color:var(--t1);}
+.spd.on{border-color:var(--green);color:var(--green);background:var(--green-dim);}
+
+/* ── Stars ── */
+.star-btn{background:none;border:none;cursor:pointer;padding:2px;transition:transform .15s var(--sp);}
+.star-btn:hover{transform:scale(1.2);}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+`;
+
+// ─── Sub-components ──────────────────────────────────────────────────────────
+
+const STARS = Array.from({length:55},(_,i)=>({
+  left:(i*71+13)%100, top:(i*47+23)%100,
+  s:i%4===0?1.5:.8, op:.04+(i%6)*.04,
+  dur:2+(i*.23)%3, delay:(i*.31)%5,
+}));
+
+const Starfield = ({dark}) => !dark ? null : (
   <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
-    {STARS_BG.map((s,i)=>(
+    {STARS.map((s,i)=>(
       <div key={i} style={{position:"absolute",left:`${s.left}%`,top:`${s.top}%`,
-        width:s.size,height:s.size,borderRadius:"50%",background:"#c084fc",opacity:s.op,
+        width:s.s,height:s.s,borderRadius:"50%",background:"#1DB954",opacity:s.op,
         animation:`twinkle ${s.dur}s ease-in-out ${s.delay}s infinite alternate`}}/>
     ))}
   </div>
 );
 
-const BookCover = ({book,size="md",onClick}) => {
+function BookCover({book,size="md",onClick,playing=false}) {
   const [c1,c2]=bookGradient(book.title);
-  const dims={sm:{w:68,h:96},md:{w:96,h:136},lg:{w:130,h:184}}[size];
+  const dims={sm:{w:64,h:90},md:{w:96,h:136},lg:{w:200,h:200}}[size];
+  const isLg=size==="lg";
   return (
-    <div onClick={onClick} style={{width:dims.w,height:dims.h,borderRadius:8,
-      background:`linear-gradient(145deg,${c1},${c2})`,cursor:onClick?"pointer":"default",
-      flexShrink:0,overflow:"hidden",position:"relative",
-      boxShadow:"0 8px 32px rgba(0,0,0,0.6),inset 3px 0 rgba(255,255,255,0.07),-2px 0 rgba(0,0,0,0.4)",
-      transition:"transform 0.25s cubic-bezier(.34,1.56,.64,1),box-shadow 0.25s ease",
-      display:"flex",flexDirection:"column",justifyContent:"flex-end",padding:"8px 7px"}}
-      onMouseEnter={e=>{if(onClick){e.currentTarget.style.transform="translateY(-6px) rotate(-1.5deg)";e.currentTarget.style.boxShadow="0 20px 48px rgba(0,0,0,0.7),inset 3px 0 rgba(255,255,255,0.1),-2px 0 rgba(0,0,0,0.5)";}}}
-      onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow="0 8px 32px rgba(0,0,0,0.6),inset 3px 0 rgba(255,255,255,0.07),-2px 0 rgba(0,0,0,0.4)";}}>
-      <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.5))"}}/>
-      <p style={{position:"relative",fontSize:size==="sm"?7.5:9.5,fontWeight:700,
-        color:"rgba(255,255,255,0.95)",lineHeight:1.3,
-        display:"-webkit-box",WebkitLineClamp:size==="sm"?3:4,WebkitBoxOrient:"vertical",overflow:"hidden"}}>
-        {book.title}
-      </p>
-      {size==="lg"&&book.author&&book.author!=="Unknown Author"&&(
-        <p style={{position:"relative",fontSize:8,color:"rgba(255,255,255,0.5)",marginTop:3,
-          overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{book.author}</p>
-      )}
+    <div onClick={onClick}
+      style={{width:dims.w,height:dims.h,borderRadius:isLg?12:8,overflow:"hidden",flexShrink:0,
+        cursor:onClick?"pointer":"default",position:"relative",
+        boxShadow:isLg?"0 20px 60px rgba(0,0,0,.7)":"0 4px 20px rgba(0,0,0,.5)",
+        animation:isLg&&playing?"float 4s ease-in-out infinite":"none",
+        transition:"transform .25s var(--sp),box-shadow .25s"}}
+      onMouseEnter={e=>{if(onClick&&!isLg){e.currentTarget.style.transform="translateY(-4px) scale(1.02)";e.currentTarget.style.boxShadow="0 12px 40px rgba(0,0,0,.6)";}}}
+      onMouseLeave={e=>{if(!isLg){e.currentTarget.style.transform="";e.currentTarget.style.boxShadow="0 4px 20px rgba(0,0,0,.5)";}}}>
+      {book.cover_url
+        ? <img src={book.cover_url} alt={book.title}
+            style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
+        : <div style={{width:"100%",height:"100%",
+            background:`linear-gradient(145deg,${c1},${c2})`,
+            display:"flex",flexDirection:"column",justifyContent:"flex-end",padding:"8px 7px"}}>
+            <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,transparent 40%,rgba(0,0,0,.55))"}}/>
+            <p style={{position:"relative",fontSize:size==="sm"?7.5:9.5,fontWeight:700,
+              color:"rgba(255,255,255,.95)",lineHeight:1.3,
+              display:"-webkit-box",WebkitLineClamp:4,WebkitBoxOrient:"vertical",overflow:"hidden"}}>
+              {book.title}
+            </p>
+          </div>}
     </div>
   );
-};
+}
 
-const CircleRing = ({value,max,size=160,stroke=12}) => {
+const Waveform = ({playing,bars=36}) => (
+  <div className="wave">
+    {WAVE_H.slice(0,bars).map((h,i)=>(
+      <div key={i} className="wave-bar"
+        style={{height:`${h}%`,
+          background:playing?"var(--green)":"var(--bg3h)",
+          animation:playing?`waveBar ${.35+(i%7)*.1}s ease-in-out ${(i%5)*.07}s infinite alternate`:"none"}}/>
+    ))}
+  </div>
+);
+
+const CircleRing = ({value,max,size=164,stroke=13}) => {
   const r=(size-stroke)/2, circ=2*Math.PI*r;
-  const offset=circ-Math.min(value/max,1)*circ;
+  const off=circ-Math.min(value/max,1)*circ;
   return (
     <svg width={size} height={size}>
       <defs>
         <linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#7c3aed"/>
-          <stop offset="100%" stopColor="#c084fc"/>
+          <stop offset="0%" stopColor="#1DB954"/>
+          <stop offset="100%" stopColor="#17a348"/>
         </linearGradient>
       </defs>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(124,58,237,0.12)" strokeWidth={stroke}/>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--bg3)" strokeWidth={stroke}/>
       <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="url(#rg)" strokeWidth={stroke}
-        strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
+        strokeDasharray={circ} strokeDashoffset={off} strokeLinecap="round"
         transform={`rotate(-90 ${size/2} ${size/2})`}
-        style={{transition:"stroke-dashoffset 1.4s cubic-bezier(.34,1,.56,1)"}}/>
+        style={{transition:"stroke-dashoffset 1.2s var(--ease)"}}/>
     </svg>
   );
 };
 
 const StarRow = ({value,onChange,readonly=false}) => (
-  <div style={{display:"flex",gap:4}}>
+  <div style={{display:"flex",gap:3}}>
     {[1,2,3,4,5].map(s=>(
-      <button key={s} onClick={()=>!readonly&&onChange?.(s)}
-        style={{background:"none",border:"none",cursor:readonly?"default":"pointer",padding:2,
-          color:s<=value?"#c084fc":"rgba(124,58,237,0.2)",transition:"color 0.15s,filter 0.15s",
-          filter:s<=value?"drop-shadow(0 0 5px rgba(192,132,252,0.6))":"none"}}>
-        <Star size={18} fill={s<=value?"currentColor":"none"}/>
+      <button key={s} className="star-btn" onClick={()=>!readonly&&onChange?.(s)}>
+        <Star size={17} fill={s<=value?"var(--green)":"none"}
+          color={s<=value?"var(--green)":"var(--t3)"}/>
       </button>
-    ))}
-  </div>
-);
-
-const Waveform = ({playing,bars=36}) => (
-  <div style={{display:"flex",alignItems:"center",gap:2.5,height:48,justifyContent:"center"}}>
-    {WAVEFORM_HEIGHTS.slice(0,bars).map((h,i)=>(
-      <div key={i} style={{width:2.5,height:`${h}%`,borderRadius:4,
-        background:playing?"linear-gradient(180deg,#c084fc,#7c3aed)":"rgba(124,58,237,0.18)",
-        animation:playing?`waveBar ${0.35+(i%7)*0.1}s ease-in-out ${(i%5)*0.07}s infinite alternate`:"none",
-        transition:"background 0.4s"}}/>
     ))}
   </div>
 );
@@ -224,51 +550,105 @@ const ConfettiBlast = () => (
   </div>
 );
 
-const BottomNav = ({screen,setScreen,finishedCount}) => {
+function SkeletonCards() {
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:10}}>
+      {[0,.07,.14].map(d=>(
+        <div key={d} className="book-card" style={{pointerEvents:"none",animation:`fadeUp .4s var(--ease) ${d}s both`}}>
+          <div className="skel skel-cover"/>
+          <div style={{flex:1}}>
+            <div className="skel skel-line w80"/>
+            <div className="skel skel-line w50"/>
+            <div style={{height:16}}/>
+            <div className="skel skel-line w30"/>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ThemeToggle({theme,onToggle}) {
+  return (
+    <button className="theme-toggle t-ui" onClick={onToggle} aria-label="Toggle theme">
+      <div className={`tt-thumb ${theme==="light"?"":"active"}`}>
+        <Moon size={13}/>
+      </div>
+      <div className={`tt-thumb ${theme==="light"?"active":""}`}>
+        <Sun size={13}/>
+      </div>
+    </button>
+  );
+}
+
+function MiniPlayer({book,isPlaying,progress,onToggle,onOpen}) {
+  const [c1,c2]=bookGradient(book.title);
+  return (
+    <div className="mini-player">
+      <div style={{height:2,background:"var(--bg3)"}}>
+        <div style={{height:"100%",width:`${progress}%`,background:"var(--green)",transition:"width .5s linear"}}/>
+      </div>
+      <div className="mini-inner" onClick={onOpen}>
+        <div style={{width:38,height:38,borderRadius:8,overflow:"hidden",flexShrink:0}}>
+          {book.cover_url
+            ?<img src={book.cover_url} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+            :<div style={{width:"100%",height:"100%",background:`linear-gradient(135deg,${c1},${c2})`}}/>}
+        </div>
+        <div style={{flex:1,minWidth:0}}>
+          <p style={{fontFamily:"Inter,system-ui,sans-serif",fontSize:13,fontWeight:600,
+            color:"var(--t1)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+            {book.title}
+          </p>
+          <p style={{fontFamily:"Inter,system-ui,sans-serif",fontSize:11,color:"var(--t3)"}}>
+            {book.author||"Unknown Author"}
+          </p>
+        </div>
+        <button onClick={e=>{e.stopPropagation();onToggle();}}
+          style={{background:"var(--green)",border:"none",borderRadius:"50%",width:36,height:36,
+            cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",
+            flexShrink:0,transition:"transform .15s var(--sp)"}}>
+          {isPlaying?<Pause size={15} color="#000" fill="#000"/>:<Play size={15} color="#000" fill="#000" style={{marginLeft:2}}/>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function BottomNav({screen,setScreen,finishedCount}) {
   const tabs=[
     {id:"library",Icon:Library,label:"Library"},
-    {id:"shelf",  Icon:Archive, label:"Shelf",   badge:finishedCount},
+    {id:"shelf",  Icon:Archive, label:"Shelf", badge:finishedCount},
     {id:"goals",  Icon:Target,  label:"Goals"},
     {id:"wrapped",Icon:Sparkles,label:"Wrapped"},
   ];
+  const activeIdx=tabs.findIndex(t=>t.id===screen);
+  const pct=100/tabs.length;
   return (
-    <nav style={{position:"fixed",bottom:0,left:0,right:0,zIndex:100,
-      background:"rgba(6,4,18,0.92)",backdropFilter:"blur(28px) saturate(1.5)",
-      borderTop:"0.5px solid rgba(124,58,237,0.15)",display:"flex"}}>
-      {tabs.map(({id,Icon,label,badge})=>{
-        const active=screen===id;
+    <nav className="bnav">
+      <div className="bnav-indicator" style={{left:`${activeIdx*pct}%`,width:`${pct}%`}}/>
+      {tabs.map(({id,Icon,label,badge},i)=>{
+        const on=screen===id;
         return (
-          <button key={id} onClick={()=>setScreen(id)}
-            style={{flex:1,background:"none",border:"none",cursor:"pointer",
-              padding:"14px 4px 12px",display:"flex",flexDirection:"column",
-              alignItems:"center",gap:4,position:"relative",
-              color:active?"#c084fc":"rgba(91,74,122,0.8)",
-              transition:"color 0.2s"}}>
-            {badge>0&&!active&&(
-              <div style={{position:"absolute",top:10,right:"18%",width:7,height:7,
-                borderRadius:"50%",background:"#7c3aed"}}/>
+          <button key={id} className={`bnav-tab ${on?"on":""}`} onClick={()=>setScreen(id)}>
+            {badge>0&&!on&&(
+              <div style={{position:"absolute",top:12,right:"18%",width:7,height:7,
+                borderRadius:"50%",background:"var(--green)"}}/>
             )}
-            <div style={{transition:"transform 0.2s cubic-bezier(.34,1.56,.64,1)",
-              transform:active?"scale(1.15)":"scale(1)"}}>
-              <Icon size={20} strokeWidth={active?2:1.5}/>
+            <div style={{transform:on?"scale(1.15)":"scale(1)",transition:"transform .25s var(--sp)"}}>
+              <Icon size={20} strokeWidth={on?2.2:1.6}/>
             </div>
-            <span style={{fontFamily:"'Space Mono',monospace",fontSize:9,
-              fontWeight:active?700:400,letterSpacing:"0.03em"}}>{label}</span>
-            {active&&(
-              <div style={{width:20,height:2,borderRadius:2,
-                background:"linear-gradient(90deg,#7c3aed,#c084fc)",
-                animation:"scaleIn 0.2s ease"}}/>
-            )}
+            <span>{label}</span>
           </button>
         );
       })}
     </nav>
   );
-};
+}
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 
 export default function App() {
+  const [theme,setTheme]=useState(()=>localStorage.getItem("theme")||"dark");
   const [screen,setScreen]=useState("library");
   const [fromScreen,setFromScreen]=useState("library");
   const [books,setBooks]=useState([]);
@@ -291,7 +671,7 @@ export default function App() {
   const [currentTime,setCurrentTime]=useState(0);
   const [duration,setDuration]=useState(0);
   const [pregenProgress,setPregenProgress]=useState(null);
-  const [voice,setVoice]=useState(VOICES.find(v=>v.id==="en-US-Neural2-F"));
+  const [voice,setVoice]=useState(VOICES[0]);
   const [showVoiceDrop,setShowVoiceDrop]=useState(false);
   const [showRegenConfirm,setShowRegenConfirm]=useState(false);
   const [showBookComplete,setShowBookComplete]=useState(false);
@@ -304,11 +684,17 @@ export default function App() {
   const [searchQ,setSearchQ]=useState("");
   const [filterCat,setFilterCat]=useState("All");
   const [wrappedPeriod,setWrappedPeriod]=useState("year");
+  const [editBook,setEditBook]=useState(null);
+  const [editForm,setEditForm]=useState({title:"",author:"",category:"Uncategorized"});
+  const [editCoverFile,setEditCoverFile]=useState(null);
+  const [editCoverPreview,setEditCoverPreview]=useState(null);
+  const [savingEdit,setSavingEdit]=useState(false);
   const [quoteIdx]=useState(()=>Math.floor((Date.now()/86400000)%QUOTES.length));
 
   const audioRef=useRef(null);
-  const preloadRef=useRef(null);
   const fileInputRef=useRef(null);
+  const coverInputRef=useRef(null);
+  const editCoverInputRef=useRef(null);
   const progressSaveRef=useRef(null);
   const voiceDropRef=useRef(null);
   const chunksRef=useRef(chunks);
@@ -324,6 +710,11 @@ export default function App() {
   useEffect(()=>{bookRef.current=activeBook;},[activeBook]);
   useEffect(()=>{voiceRef.current=voice;},[voice]);
   useEffect(()=>{speedRef.current=speed;},[speed]);
+
+  useEffect(()=>{
+    document.body.className=theme;
+    localStorage.setItem("theme",theme);
+  },[theme]);
 
   useEffect(()=>{fetchBooks();fetchJournals();},[]);
 
@@ -361,23 +752,23 @@ export default function App() {
   // ── Upload
   const handleFilePicked=async file=>{
     if(!file||file.type!=="application/pdf"){setError("Please upload a PDF file.");return;}
-    setError("");setIsLoading(true);setLoadingMsg("Reading PDF…");
-    try {
+    setError("");setIsLoading(true);setLoadingMsg("Extracting text…");
+    try{
       const text=await extractTextFromPDF(file);
       if(!text) throw new Error("No readable text found.");
       setUploadPending({file,text,chunks:chunkText(text)});
       setUploadForm({title:file.name.replace(/\.pdf$/i,""),author:"",category:"Uncategorized"});
-    } catch(e){setError(e.message);}
+    }catch(e){setError(e.message);}
     setIsLoading(false);setLoadingMsg("");
   };
+
   const confirmUpload=async()=>{
     if(!uploadPending) return;
-    setUploading(true);setLoadingMsg("Adding to your collection…");
-    try {
+    setUploading(true);setLoadingMsg("Adding to collection…");
+    try{
       const {file,text,chunks:c}=uploadPending;
       const fp=`${Date.now()}_${file.name}`;
-      const {error:ue}=await supabase.storage.from("books").upload(fp,file);
-      if(ue) throw ue;
+      await supabase.storage.from("books").upload(fp,file);
       const {data:bd,error:be}=await supabase.from("books").insert({
         title:uploadForm.title||file.name.replace(/\.pdf$/i,""),
         author:uploadForm.author||"Unknown Author",
@@ -392,10 +783,58 @@ export default function App() {
       await fetchBooks();
       setUploadPending(null);setUploading(false);setLoadingMsg("");
       openBook({...bd,reading_progress:[{current_chunk:0,current_position:0}]},c);
-    } catch(e){setError(e.message);setUploading(false);setLoadingMsg("");}
+    }catch(e){setError(e.message);setUploading(false);setLoadingMsg("");}
   };
 
-  // ── Book
+  // ── Edit book
+  const openEdit=(e,book)=>{
+    e.stopPropagation();
+    setEditBook(book);
+    setEditForm({title:book.title,author:book.author||"",category:book.category||"Uncategorized"});
+    setEditCoverFile(null);
+    setEditCoverPreview(book.cover_url||null);
+  };
+
+  const handleEditCoverPick=file=>{
+    if(!file||!file.type.startsWith("image/")) return;
+    setEditCoverFile(file);
+    const reader=new FileReader();
+    reader.onload=e=>setEditCoverPreview(e.target.result);
+    reader.readAsDataURL(file);
+  };
+
+  const saveEdit=async()=>{
+    if(!editBook) return;
+    setSavingEdit(true);
+    try{
+      let cover_url=editBook.cover_url||null;
+      if(editCoverFile){
+        const ext=editCoverFile.name.split(".").pop();
+        const path=`covers/${editBook.id}.${ext}`;
+        const {error:upErr}=await supabase.storage.from("books").upload(path,editCoverFile,{upsert:true});
+        if(!upErr){
+          const {data:urlData}=supabase.storage.from("books").getPublicUrl(path);
+          cover_url=urlData.publicUrl;
+        }
+      }
+      const payload={
+        title:editForm.title||editBook.title,
+        author:editForm.author||"Unknown Author",
+        category:editForm.category,
+      };
+      if(cover_url!==editBook.cover_url) payload.cover_url=cover_url;
+      const {error:uErr}=await supabase.from("books").update(payload).eq("id",editBook.id);
+      if(uErr) throw uErr;
+      await fetchBooks();
+      if(activeBook?.id===editBook.id){
+        setActiveBook(p=>({...p,...payload,cover_url}));
+      }
+      setEditBook(null);
+    }catch(e){setError(e.message);}
+    setSavingEdit(false);
+  };
+
+  // ── Open book
   const openBook=async(book,preloaded=null)=>{
     setError("");setAudioUrls({});setIsPlaying(false);setActiveBook(book);
     setPregenProgress(null);setShowRegenConfirm(false);setShowBookComplete(false);
@@ -403,11 +842,11 @@ export default function App() {
     let c=preloaded;
     if(!c){
       setIsLoading(true);setLoadingMsg("Loading book…");
-      try {
+      try{
         const {data}=await supabase.storage.from("books").download(book.file_path);
         const f=new File([data],book.title+".pdf",{type:"application/pdf"});
         c=chunkText(await extractTextFromPDF(f));
-      } catch(e){setError(e.message);setIsLoading(false);return;}
+      }catch(e){setError(e.message);setIsLoading(false);return;}
       setIsLoading(false);setLoadingMsg("");
     }
     setChunks(c);
@@ -418,6 +857,7 @@ export default function App() {
     setScreen("player");
     if(prog?.id) await supabase.from("reading_progress").update({last_opened:new Date().toISOString()}).eq("id",prog.id);
   };
+
   const repeatBook=async book=>{
     const prog=book.reading_progress?.[0];
     if(prog?.id) await supabase.from("reading_progress").update({current_chunk:0,current_position:0}).eq("id",prog.id);
@@ -425,33 +865,36 @@ export default function App() {
     await fetchBooks();
     openBook({...book,status:"reading",finished_at:null,reading_progress:[{...prog,current_chunk:0,current_position:0}]});
   };
+
   const saveProgress=useCallback(async(chunk,pos)=>{
-    const book=bookRef.current;
-    const prog=book?.reading_progress?.[0];
+    const book=bookRef.current,prog=book?.reading_progress?.[0];
     if(prog?.id) await supabase.from("reading_progress")
       .update({current_chunk:chunk,current_position:pos,last_opened:new Date().toISOString()})
       .eq("id",prog.id);
   },[]);
+
   const deleteBook=async(e,bookId,fp)=>{
     e.stopPropagation();
-    if(!confirm("Remove this book?")) return;
+    if(!confirm("Remove this book from your collection?")) return;
     const {data:cd}=await supabase.from("audio_chunks").select("audio_path").eq("book_id",bookId);
     if(cd?.length) await supabase.storage.from("audio").remove(cd.map(c=>c.audio_path));
     await supabase.storage.from("books").remove([fp]);
     await supabase.from("books").delete().eq("id",bookId);
+    if(activeBook?.id===bookId){setActiveBook(null);setIsPlaying(false);audioRef.current?.pause();}
     fetchBooks();
   };
 
-  // ── Audio — seamless 3-chunk lookahead
+  // ── Audio — seamless 4-chunk lookahead
   const preloadChunk=useCallback(async idx=>{
     const c=chunksRef.current,urls=urlsRef.current,book=bookRef.current,v=voiceRef.current;
     if(!API_KEY||!c[idx]||urls[idx]||!book) return;
-    try {
+    try{
       const url=await ttsGenerate(c[idx],book.id,idx,v);
       setAudioUrls(prev=>({...prev,[idx]:url}));
       setCachedChunks(prev=>({...prev,[idx]:true}));
+      // pre-buffer bytes into browser cache
       const h=new Audio();h.preload="auto";h.src=url;h.load();
-    } catch(e){}
+    }catch(e){}
   },[]);
 
   const playChunk=useCallback(async(idx,force=false)=>{
@@ -462,11 +905,11 @@ export default function App() {
     if(!url){
       setIsLoading(true);
       setLoadingMsg(cachedChunks[idx]&&!force?`Loading part ${idx+1}…`:`Generating part ${idx+1} of ${c.length}…`);
-      try {
+      try{
         url=await ttsGenerate(c[idx],book.id,idx,v,force);
         setAudioUrls(prev=>({...prev,[idx]:url}));
         setCachedChunks(prev=>({...prev,[idx]:true}));
-      } catch(e){setError(e.message);setIsLoading(false);setIsPlaying(false);return;}
+      }catch(e){setError(e.message);setIsLoading(false);setIsPlaying(false);return;}
       setIsLoading(false);setLoadingMsg("");
     }
     if(audioRef.current){
@@ -475,22 +918,23 @@ export default function App() {
       audioRef.current.play();
       setIsPlaying(true);
     }
-    [1,2,3].forEach(off=>{
+    // pre-generate next 4 chunks so transitions are instant
+    [1,2,3,4].forEach(off=>{
       const n=idx+off;
-      if(c[n]&&!urlsRef.current[n]) setTimeout(()=>preloadChunk(n),off*700);
+      if(c[n]&&!urlsRef.current[n]) setTimeout(()=>preloadChunk(n),off*600);
     });
   },[cachedChunks,preloadChunk]);
 
   const handlePlay=async()=>{
-    if(!API_KEY){setError("VITE_GOOGLE_TTS_KEY not set.");return;}
+    if(!API_KEY){setError("VITE_GOOGLE_TTS_KEY not configured.");return;}
     if(!chunks.length) return;
     if(isPlaying){
       audioRef.current?.pause();setIsPlaying(false);
       saveProgress(currentChunk,audioRef.current?.currentTime||0);
-    } else {
+    }else{
       if(audioRef.current?.src&&audioRef.current.paused){
         audioRef.current.playbackRate=speed;audioRef.current.play();setIsPlaying(true);
-      } else playChunk(currentChunk);
+      }else playChunk(currentChunk);
     }
   };
 
@@ -498,7 +942,7 @@ export default function App() {
     const idx=chunkRef.current,c=chunksRef.current,book=bookRef.current;
     if(idx<c.length-1){
       playChunk(idx+1);
-    } else {
+    }else{
       setIsPlaying(false);setProgress(100);saveProgress(0,0);
       if(book){
         await supabase.from("books").update({status:"finished",finished_at:new Date().toISOString()}).eq("id",book.id);
@@ -528,12 +972,12 @@ export default function App() {
     setShowRegenConfirm(false);setPregenProgress({done:0,total:chunks.length});
     for(let i=0;i<chunks.length;i++){
       if(force||!cachedChunks[i]){
-        try {
+        try{
           const url=await ttsGenerate(chunks[i],activeBook.id,i,voice,force);
           setAudioUrls(prev=>({...prev,[i]:url}));
           setCachedChunks(prev=>({...prev,[i]:true}));
           const h=new Audio();h.preload="auto";h.src=url;h.load();
-        } catch(e){setError(`Failed on part ${i+1}: ${e.message}`);setPregenProgress(null);return;}
+        }catch(e){setError(`Part ${i+1}: ${e.message}`);setPregenProgress(null);return;}
       }
       setPregenProgress({done:i+1,total:chunks.length});
     }
@@ -542,17 +986,17 @@ export default function App() {
 
   const handleDownload=async()=>{
     if(!activeBook) return;
-    setLoadingMsg("Preparing download…");setIsLoading(true);
-    try {
+    setLoadingMsg("Preparing…");setIsLoading(true);
+    try{
       const {data:cd}=await supabase.from("audio_chunks").select("chunk_index,audio_path")
         .eq("book_id",activeBook.id).eq("voice_id",voice.id).order("chunk_index");
       if(!cd?.length){setError("Generate audio first.");setIsLoading(false);setLoadingMsg("");return;}
       const blobs=[];
       for(const ch of cd){const {data}=await supabase.storage.from("audio").download(ch.audio_path);blobs.push(data);}
       const url=URL.createObjectURL(new Blob(blobs,{type:"audio/mp3"}));
-      const a=document.createElement("a");a.href=url;a.download=`${activeBook.title} — ${voice.label}.mp3`;a.click();
+      const a=document.createElement("a");a.href=url;a.download=`${activeBook.title}.mp3`;a.click();
       URL.revokeObjectURL(url);
-    } catch(e){setError(e.message);}
+    }catch(e){setError(e.message);}
     setIsLoading(false);setLoadingMsg("");
   };
 
@@ -590,7 +1034,6 @@ export default function App() {
   });
 
   const presentCats=["All",...new Set(books.map(b=>b.category).filter(Boolean))];
-
   const sortedShelf=[...finished].sort((a,b)=>{
     if(shelfSort==="date") return new Date(b.finished_at||0)-new Date(a.finished_at||0);
     if(shelfSort==="rating") return (journals[b.id]?.rating||0)-(journals[a.id]?.rating||0);
@@ -600,6 +1043,9 @@ export default function App() {
 
   const cachedCount=Object.keys(cachedChunks).length;
   const allCached=chunks.length>0&&cachedCount>=chunks.length;
+  const showNav=!["player","journal"].includes(screen);
+  const showMini=!!activeBook&&showNav;
+  const contentPb=showNav?(showMini?140:72):0;
 
   const now2=new Date();
   const pStart={
@@ -620,344 +1066,167 @@ export default function App() {
   }));
   const maxMo=Math.max(1,...monthBreak.map(m=>m.count));
   const quote=QUOTES[quoteIdx];
-  const showNav=!["player","journal"].includes(screen);
-
-  // ─── CSS ─────────────────────────────────────────────────────────────────
-
-  const css=`
-    @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Space+Mono:wght@400;700&display=swap');
-    *{box-sizing:border-box;margin:0;padding:0;}
-    html{scroll-behavior:smooth;}
-    body{background:#060412;overflow-x:hidden;}
-
-    @keyframes wave{from{transform:scaleY(0.35);transform-origin:center}to{transform:scaleY(1.45);transform-origin:center}}
-    @keyframes waveBar{from{height:20%}to{height:100%}}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}
-    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-    @keyframes dropIn{from{opacity:0;transform:translateY(-10px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-    @keyframes shimmer{0%,100%{opacity:0.65}50%{opacity:1}}
-    @keyframes floatOrb{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-22px) scale(1.04)}}
-    @keyframes confettiFall{to{transform:translateY(105vh) rotate(720deg);opacity:0}}
-    @keyframes glowPulse{0%,100%{box-shadow:0 0 28px rgba(124,58,237,0.45),0 0 0 0 rgba(124,58,237,0.2)}50%{box-shadow:0 0 48px rgba(192,132,252,0.7),0 0 0 8px rgba(124,58,237,0)}}
-    @keyframes scaleIn{from{transform:scale(0)}to{transform:scale(1)}}
-    @keyframes twinkle{from{opacity:0.04}to{opacity:0.45}}
-    @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
-    @keyframes popIn{from{opacity:0;transform:scale(0.8) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
-    @keyframes borderFlow{0%,100%{border-color:rgba(124,58,237,0.2)}50%{border-color:rgba(192,132,252,0.45)}}
-
-    .fade-up{animation:fadeUp 0.4s ease both;}
-    .pop-in{animation:popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;}
-
-    .card{
-      background:rgba(20,14,36,0.8);
-      border:0.5px solid rgba(124,58,237,0.14);
-      border-radius:18px;
-      backdrop-filter:blur(16px);
-      padding:1.5rem;
-    }
-    .card-hover{transition:border-color 0.25s,box-shadow 0.25s,background 0.25s,transform 0.2s;}
-    .card-hover:hover{
-      border-color:rgba(124,58,237,0.38);
-      box-shadow:0 0 28px rgba(124,58,237,0.12);
-      background:rgba(24,17,42,0.9);
-    }
-
-    .btn-primary{
-      background:linear-gradient(135deg,#7c3aed,#9333ea);
-      border:none;border-radius:50%;color:#f5f0ff;cursor:pointer;
-      display:flex;align-items:center;justify-content:center;
-      transition:transform 0.15s cubic-bezier(.34,1.56,.64,1),filter 0.2s,box-shadow 0.2s;
-      animation:glowPulse 3s ease infinite;
-      position:relative;overflow:hidden;
-    }
-    .btn-primary:hover{transform:scale(1.08);filter:brightness(1.12);}
-    .btn-primary:active{transform:scale(0.94);}
-    .btn-primary:disabled{background:rgba(45,31,74,0.6);color:#3d2f5c;cursor:not-allowed;animation:none;box-shadow:none;}
-
-    .btn-glass{
-      background:rgba(124,58,237,0.08);
-      border:0.5px solid rgba(124,58,237,0.18);
-      border-radius:10px;color:rgba(167,139,202,0.9);cursor:pointer;
-      font-family:'Space Mono',monospace;font-size:11px;
-      padding:8px 14px;
-      transition:all 0.18s cubic-bezier(.34,1.56,.64,1);
-      display:flex;align-items:center;justify-content:center;gap:6px;
-      backdrop-filter:blur(8px);
-    }
-    .btn-glass:hover{background:rgba(124,58,237,0.18);border-color:rgba(192,132,252,0.4);color:#c084fc;transform:translateY(-1px);}
-    .btn-glass:active{transform:translateY(0);}
-    .btn-glass:disabled{opacity:0.3;cursor:not-allowed;transform:none;}
-
-    .btn-ghost{
-      background:transparent;border:0.5px solid rgba(45,31,74,0.8);
-      border-radius:10px;color:rgba(91,74,122,0.9);cursor:pointer;
-      font-family:'Space Mono',monospace;font-size:11px;padding:8px 16px;
-      transition:all 0.18s ease;display:flex;align-items:center;justify-content:center;gap:6px;
-    }
-    .btn-ghost:hover{border-color:rgba(192,132,252,0.5);color:#c084fc;}
-    .btn-ghost:disabled{opacity:0.3;cursor:not-allowed;}
-
-    .btn-danger{
-      background:transparent;border:0.5px solid rgba(127,29,29,0.6);
-      border-radius:10px;color:rgba(248,113,113,0.8);cursor:pointer;
-      font-family:'Space Mono',monospace;font-size:11px;padding:8px 16px;
-      transition:all 0.18s ease;display:flex;align-items:center;justify-content:center;gap:6px;
-    }
-    .btn-danger:hover{border-color:#f87171;background:rgba(200,60,60,0.08);color:#f87171;}
-    .btn-danger:disabled{opacity:0.3;cursor:not-allowed;}
-
-    .speed-btn{
-      background:transparent;border:0.5px solid rgba(45,31,74,0.7);
-      border-radius:8px;color:rgba(74,58,104,0.9);cursor:pointer;
-      font-family:'Space Mono',monospace;font-size:10px;padding:5px 9px;
-      transition:all 0.15s ease;
-    }
-    .speed-btn:hover{border-color:rgba(192,132,252,0.4);color:#c084fc;}
-    .speed-btn.active{border-color:#c084fc;color:#c084fc;background:rgba(192,132,252,0.1);font-weight:700;}
-
-    .book-card{
-      background:rgba(17,13,26,0.7);
-      border:0.5px solid rgba(45,31,74,0.7);
-      border-radius:16px;padding:1.2rem;
-      cursor:pointer;
-      transition:border-color 0.2s,background 0.2s,box-shadow 0.2s,transform 0.18s;
-      position:relative;backdrop-filter:blur(12px);
-    }
-    .book-card:hover{
-      border-color:rgba(124,58,237,0.45);
-      background:rgba(22,15,38,0.85);
-      box-shadow:0 4px 32px rgba(124,58,237,0.14);
-      transform:translateY(-2px);
-    }
-
-    .drop-zone{
-      border:1px dashed rgba(45,31,74,0.8);border-radius:16px;
-      padding:2rem 1.5rem;text-align:center;cursor:pointer;
-      transition:all 0.25s ease;background:rgba(17,13,26,0.4);
-    }
-    .drop-zone:hover,.drop-zone.over{
-      border-color:rgba(192,132,252,0.5);
-      background:rgba(124,58,237,0.06);
-      box-shadow:inset 0 0 30px rgba(124,58,237,0.05);
-    }
-
-    .prog-track{height:3px;background:rgba(30,21,48,0.9);border-radius:2px;overflow:hidden;}
-    .prog-track.thick{height:5px;border-radius:3px;}
-    .prog-fill{height:100%;background:linear-gradient(90deg,#7c3aed,#c084fc);border-radius:2px;transition:width 0.3s linear;}
-    .prog-fill.green{background:linear-gradient(90deg,#10b981,#34d399);}
-
-    .orb{position:fixed;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0;}
-
-    .delete-btn{
-      position:absolute;top:10px;right:10px;background:transparent;border:none;
-      color:rgba(45,31,74,0.8);cursor:pointer;padding:5px;border-radius:6px;
-      opacity:0;transition:opacity 0.2s,color 0.2s;
-    }
-    .book-card:hover .delete-btn{opacity:1;}
-    .delete-btn:hover{color:#f87171;}
-
-    .voice-dropdown{
-      position:absolute;top:calc(100% + 8px);left:0;right:0;
-      background:rgba(18,12,30,0.97);border:0.5px solid rgba(58,37,96,0.8);
-      border-radius:14px;z-index:50;overflow:hidden;
-      animation:dropIn 0.18s cubic-bezier(.34,1.56,.64,1) forwards;
-      max-height:280px;overflow-y:auto;backdrop-filter:blur(24px);
-      box-shadow:0 16px 48px rgba(0,0,0,0.5);
-    }
-    .voice-opt{padding:10px 14px;cursor:pointer;transition:background 0.15s;border-bottom:0.5px solid rgba(30,21,48,0.8);}
-    .voice-opt:last-child{border-bottom:none;}
-    .voice-opt:hover{background:rgba(124,58,237,0.1);}
-    .voice-opt.on{background:rgba(192,132,252,0.1);}
-    .voice-dropdown::-webkit-scrollbar{width:3px;}
-    .voice-dropdown::-webkit-scrollbar-thumb{background:rgba(58,37,96,0.8);border-radius:2px;}
-
-    .chip{
-      background:rgba(124,58,237,0.08);border:0.5px solid rgba(45,31,74,0.8);
-      border-radius:20px;padding:6px 14px;font-family:'Space Mono',monospace;
-      font-size:10px;color:rgba(91,74,122,0.9);cursor:pointer;
-      transition:all 0.18s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;
-      display:inline-flex;align-items:center;gap:6px;
-    }
-    .chip:hover{border-color:rgba(192,132,252,0.4);color:#c084fc;transform:translateY(-1px);}
-    .chip.on{background:rgba(192,132,252,0.14);border-color:rgba(192,132,252,0.45);color:#c084fc;font-weight:700;}
-
-    .search-wrap input{
-      background:rgba(17,13,26,0.8);border:0.5px solid rgba(45,31,74,0.8);
-      border-radius:12px;padding:11px 14px 11px 42px;color:#f5f0ff;
-      font-family:'Crimson Pro',serif;font-size:15px;width:100%;outline:none;
-      transition:border-color 0.2s,box-shadow 0.2s;backdrop-filter:blur(8px);
-    }
-    .search-wrap input:focus{border-color:rgba(124,58,237,0.6);box-shadow:0 0 0 3px rgba(124,58,237,0.08);}
-    .search-wrap input::placeholder{color:rgba(74,58,104,0.8);}
-
-    .journal-ta{
-      background:rgba(17,13,26,0.8);border:0.5px solid rgba(45,31,74,0.8);
-      border-radius:12px;padding:14px;color:#f5f0ff;
-      font-family:'Crimson Pro',serif;font-size:15px;width:100%;outline:none;
-      resize:vertical;min-height:100px;transition:border-color 0.2s,box-shadow 0.2s;
-      line-height:1.7;backdrop-filter:blur(8px);
-    }
-    .journal-ta:focus{border-color:rgba(124,58,237,0.6);box-shadow:0 0 0 3px rgba(124,58,237,0.08);}
-    .journal-ta::placeholder{color:rgba(74,58,104,0.8);}
-
-    .select-inp{
-      background:rgba(17,13,26,0.8);border:0.5px solid rgba(45,31,74,0.8);
-      border-radius:12px;padding:11px 14px;color:#f5f0ff;
-      font-family:'Space Mono',monospace;font-size:11px;width:100%;outline:none;cursor:pointer;
-    }
-    .text-inp{
-      background:rgba(17,13,26,0.8);border:0.5px solid rgba(45,31,74,0.8);
-      border-radius:12px;padding:11px 14px;color:#f5f0ff;
-      font-family:'Crimson Pro',serif;font-size:15px;width:100%;outline:none;
-      transition:border-color 0.2s;
-    }
-    .text-inp:focus{border-color:rgba(124,58,237,0.6);}
-    .text-inp::placeholder{color:rgba(74,58,104,0.8);}
-
-    .wrapped-card{border-radius:22px;padding:2rem;position:relative;overflow:hidden;margin-bottom:12px;}
-    .wrapped-card::after{
-      content:'';position:absolute;inset:0;
-      background:linear-gradient(135deg,rgba(255,255,255,0.04) 0%,transparent 60%);
-      pointer-events:none;
-    }
-
-    .modal-overlay{
-      position:fixed;inset:0;background:rgba(6,4,18,0.88);
-      backdrop-filter:blur(12px) saturate(1.5);z-index:200;
-      display:flex;align-items:flex-end;justify-content:center;
-    }
-    .modal-box{
-      background:rgba(14,10,26,0.98);border:0.5px solid rgba(58,37,96,0.8);
-      border-radius:24px 24px 0 0;padding:2rem;width:100%;max-width:600px;
-      animation:slideUp 0.32s cubic-bezier(.34,1.12,.64,1);backdrop-filter:blur(24px);
-    }
-
-    .label-sm{font-family:'Space Mono',monospace;font-size:10px;color:rgba(124,100,154,0.9);
-      text-transform:uppercase;letter-spacing:0.14em;display:block;margin-bottom:8px;}
-
-    ::-webkit-scrollbar{width:3px;}
-    ::-webkit-scrollbar-track{background:transparent;}
-    ::-webkit-scrollbar-thumb{background:rgba(45,31,74,0.8);border-radius:2px;}
-  `;
-
-  // ─── Render ───────────────────────────────────────────────────────────────
+  const [c1pg,c2pg]=bookGradient(activeBook?.title||"");
 
   return (
-    <div style={{minHeight:"100vh",background:"#060412",fontFamily:"'Crimson Pro',Georgia,serif",
-      position:"relative",overflow:"hidden",paddingBottom:showNav?84:0}}>
-      <style>{css}</style>
+    <div style={{minHeight:"100vh",background:"var(--bg)",color:"var(--t1)",
+      fontFamily:"Inter,system-ui,sans-serif",paddingBottom:contentPb}}>
+      <style>{CSS}</style>
 
-      {/* Starfield */}
-      <Starfield/>
-
-      {/* Orbs */}
-      <div className="orb" style={{width:640,height:640,background:"rgba(124,58,237,0.055)",top:-200,right:-200,animation:"floatOrb 10s ease-in-out infinite"}}/>
-      <div className="orb" style={{width:420,height:420,background:"rgba(76,29,149,0.07)",bottom:-150,left:-150,animation:"floatOrb 13s ease-in-out 4s infinite"}}/>
-      <div className="orb" style={{width:280,height:280,background:"rgba(192,132,252,0.03)",top:"40%",left:"20%",animation:"floatOrb 17s ease-in-out 8s infinite"}}/>
-
-      {/* Audio */}
       <audio ref={audioRef} onEnded={handleEnded} onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={()=>setDuration(audioRef.current?.duration||0)}/>
-      <audio ref={preloadRef} preload="auto" style={{display:"none"}}/>
 
-      {showNav&&<BottomNav screen={screen} setScreen={setScreen} finishedCount={finishedCount}/>}
+      <Starfield dark={theme==="dark"}/>
+      {theme==="dark"&&<>
+        <div style={{position:"fixed",top:-200,right:-200,width:500,height:500,borderRadius:"50%",
+          background:"rgba(29,185,84,0.04)",filter:"blur(100px)",pointerEvents:"none",zIndex:0}}/>
+        <div style={{position:"fixed",bottom:-150,left:-150,width:400,height:400,borderRadius:"50%",
+          background:"rgba(29,185,84,0.03)",filter:"blur(80px)",pointerEvents:"none",zIndex:0}}/>
+      </>}
 
-      {/* ── Upload Modal ────────────────────────────────────────────────────── */}
+      {/* ── Upload Modal */}
       {uploadPending&&(
-        <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)setUploadPending(null);}}>
+        <div className="modal-wrap" onClick={e=>{if(e.target===e.currentTarget)setUploadPending(null);}}>
           <div className="modal-box">
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1.5rem"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
               <div>
-                <p style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"#c084fc",
-                  letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:6}}>New book</p>
-                <h3 style={{fontSize:"1.4rem",fontWeight:300,color:"#f5f0ff"}}>Tell us about it</h3>
+                <p className="lbl">New book</p>
+                <h3 style={{fontSize:"1.3rem",fontWeight:600,color:"var(--t1)"}}>Customize your book</h3>
               </div>
-              <div style={{display:"flex",alignItems:"center",gap:12}}>
-                <BookCover book={{title:uploadForm.title||"Preview",author:uploadForm.author}} size="sm"/>
-                <button onClick={()=>setUploadPending(null)} className="btn-ghost" style={{padding:8}}>
-                  <X size={16}/>
-                </button>
-              </div>
+              <BookCover book={{title:uploadForm.title||"Preview"}} size="sm"/>
             </div>
-            <div style={{display:"flex",flexDirection:"column",gap:14,marginBottom:"1.5rem"}}>
+            <div style={{display:"flex",flexDirection:"column",gap:14,marginBottom:20}}>
               <div>
-                <label className="label-sm">Title</label>
-                <input className="text-inp" value={uploadForm.title}
+                <label className="lbl">Title</label>
+                <input className="inp" value={uploadForm.title}
                   onChange={e=>setUploadForm(p=>({...p,title:e.target.value}))} placeholder="Book title…"/>
               </div>
               <div>
-                <label className="label-sm">Author</label>
-                <input className="text-inp" value={uploadForm.author}
+                <label className="lbl">Author</label>
+                <input className="inp" value={uploadForm.author}
                   onChange={e=>setUploadForm(p=>({...p,author:e.target.value}))} placeholder="Author name…"/>
               </div>
               <div>
-                <label className="label-sm">Category</label>
-                <select className="select-inp" value={uploadForm.category}
+                <label className="lbl">Category</label>
+                <select className="inp sel" value={uploadForm.category}
                   onChange={e=>setUploadForm(p=>({...p,category:e.target.value}))}>
                   {CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
             </div>
             <div style={{display:"flex",gap:10}}>
-              <button className="btn-ghost" onClick={()=>setUploadPending(null)} style={{flex:1}}>Cancel</button>
+              <button className="btn btn-ghost" onClick={()=>setUploadPending(null)} style={{flex:1}}>Cancel</button>
               <button onClick={confirmUpload} disabled={uploading}
-                style={{flex:2,background:"linear-gradient(135deg,#7c3aed,#9333ea)",border:"none",
-                  borderRadius:12,color:"#f5f0ff",cursor:"pointer",padding:"13px",
-                  fontFamily:"'Space Mono',monospace",fontSize:11,fontWeight:700,
-                  display:"flex",alignItems:"center",justifyContent:"center",gap:8,
-                  opacity:uploading?0.6:1,transition:"opacity 0.2s,transform 0.15s"}}>
-                {uploading
-                  ?<><div style={{width:13,height:13,border:"2px solid #f5f0ff",borderTopColor:"transparent",
-                      borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/> Adding…</>
-                  :<><BookOpen size={14}/> Add to collection</>}
+                className="btn btn-green" style={{flex:2,borderRadius:10}}>
+                {uploading?<><div style={{width:13,height:13,border:"2px solid #000",borderTopColor:"transparent",
+                  borderRadius:"50%",animation:"spin .8s linear infinite"}}/> Adding…</>
+                :<><BookOpen size={14}/> Add to library</>}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Book Complete ───────────────────────────────────────────────────── */}
+      {/* ── Edit Book Modal */}
+      {editBook&&(
+        <div className="modal-wrap" onClick={e=>{if(e.target===e.currentTarget)setEditBook(null);}}>
+          <div className="modal-box">
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+              <div>
+                <p className="lbl">Customize book</p>
+                <h3 style={{fontSize:"1.3rem",fontWeight:600,color:"var(--t1)"}}>Edit details</h3>
+              </div>
+              <button className="btn btn-icon" onClick={()=>setEditBook(null)}><X size={15}/></button>
+            </div>
+
+            {/* Cover upload */}
+            <input ref={editCoverInputRef} type="file" accept="image/*" style={{display:"none"}}
+              onChange={e=>handleEditCoverPick(e.target.files[0])}/>
+            <div style={{marginBottom:18}}>
+              <label className="lbl">Cover image</label>
+              <div className="cover-upload-area" onClick={()=>editCoverInputRef.current?.click()}>
+                {editCoverPreview
+                  ?<img src={editCoverPreview} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                  :(()=>{const [a,b]=bookGradient(editBook.title);return(
+                    <div style={{width:"100%",height:"100%",background:`linear-gradient(145deg,${a},${b})`,
+                      display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      <ImagePlus size={28} color="rgba(255,255,255,.4)"/>
+                    </div>
+                  );})()}
+                <div className="cover-upload-overlay">
+                  <Camera size={22} color="#fff"/>
+                  <span style={{fontFamily:"Inter,system-ui,sans-serif",fontSize:11,fontWeight:600,color:"#fff"}}>
+                    {editCoverPreview?"Change photo":"Add cover photo"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{display:"flex",flexDirection:"column",gap:13,marginBottom:20}}>
+              <div>
+                <label className="lbl">Display name</label>
+                <input className="inp" value={editForm.title}
+                  onChange={e=>setEditForm(p=>({...p,title:e.target.value}))} placeholder="How you want to call this book…"/>
+              </div>
+              <div>
+                <label className="lbl">Author</label>
+                <input className="inp" value={editForm.author}
+                  onChange={e=>setEditForm(p=>({...p,author:e.target.value}))} placeholder="Author name…"/>
+              </div>
+              <div>
+                <label className="lbl">Category</label>
+                <select className="inp sel" value={editForm.category}
+                  onChange={e=>setEditForm(p=>({...p,category:e.target.value}))}>
+                  {CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <button className="btn btn-ghost" onClick={()=>setEditBook(null)} style={{flex:1}}>Cancel</button>
+              <button onClick={saveEdit} disabled={savingEdit}
+                className="btn btn-green" style={{flex:2,borderRadius:10}}>
+                {savingEdit?<><div style={{width:13,height:13,border:"2px solid #000",borderTopColor:"transparent",
+                  borderRadius:"50%",animation:"spin .8s linear infinite"}}/> Saving…</>
+                :<><CheckCircle2 size={14}/> Save changes</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Book Complete */}
       {showBookComplete&&(
         <>
           <ConfettiBlast/>
-          <div style={{position:"fixed",inset:0,background:"rgba(6,4,18,0.96)",backdropFilter:"blur(16px)",
-            zIndex:250,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+          <div style={{position:"fixed",inset:0,background:"var(--bg)",zIndex:250,
+            display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
             padding:"2rem",textAlign:"center"}}>
-            <div style={{animation:"popIn 0.55s cubic-bezier(0.34,1.56,0.64,1) 0.2s both"}}>
-              <div style={{width:96,height:96,borderRadius:"50%",margin:"0 auto 24px",
-                background:"linear-gradient(135deg,#7c3aed,#c084fc)",
-                display:"flex",alignItems:"center",justifyContent:"center",
-                boxShadow:"0 0 60px rgba(192,132,252,0.5)"}}>
-                <BookOpen size={44} color="#f5f0ff"/>
+            <div style={{animation:"scaleIn .5s var(--sp) .1s both",marginBottom:28}}>
+              <div style={{width:96,height:96,borderRadius:"50%",margin:"0 auto",
+                background:"var(--green)",display:"flex",alignItems:"center",justifyContent:"center",
+                boxShadow:"0 0 60px var(--green-glow)"}}>
+                <BookOpen size={44} color="#000"/>
               </div>
             </div>
-            <p style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"#c084fc",
-              letterSpacing:"0.3em",textTransform:"uppercase",marginBottom:14,
-              animation:"fadeUp 0.4s ease 0.5s both"}}>Book complete</p>
-            <h2 style={{fontSize:"clamp(1.8rem,5vw,2.6rem)",fontWeight:300,color:"#f5f0ff",
-              lineHeight:1.2,marginBottom:10,animation:"fadeUp 0.4s ease 0.6s both"}}>
-              You did it, Victory!
-            </h2>
-            <p style={{fontFamily:"'Crimson Pro',serif",fontStyle:"italic",fontSize:"1.15rem",
-              color:"#9b7cc8",marginBottom:8,animation:"fadeUp 0.4s ease 0.7s both"}}>
+            <p className="lbl" style={{animation:"fadeUp .3s var(--ease) .4s both",color:"var(--green)"}}>
+              book complete
+            </p>
+            <h2 style={{fontSize:"clamp(1.8rem,6vw,2.8rem)",fontWeight:700,color:"var(--t1)",
+              marginBottom:8,animation:"fadeUp .3s var(--ease) .5s both"}}>You did it, Victory!</h2>
+            <p style={{fontSize:"1.1rem",color:"var(--t2)",fontFamily:"Crimson Pro,Georgia,serif",
+              fontStyle:"italic",marginBottom:6,animation:"fadeUp .3s var(--ease) .6s both"}}>
               "{activeBook?.title}"
             </p>
-            <p style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"rgba(74,58,104,0.9)",
-              marginBottom:"2.5rem",animation:"fadeUp 0.4s ease 0.8s both"}}>
-              {(activeBook?.word_count||0).toLocaleString()} words · ~{Math.round((activeBook?.word_count||0)/150/60*10)/10} hrs
+            <p className="lbl" style={{marginBottom:36,animation:"fadeUp .3s var(--ease) .7s both"}}>
+              ~{Math.round((activeBook?.word_count||0)/150/60*10)/10} hrs · {(activeBook?.word_count||0).toLocaleString()} words
             </p>
             <div style={{display:"flex",flexDirection:"column",gap:10,width:"100%",maxWidth:300,
-              animation:"fadeUp 0.4s ease 0.9s both"}}>
+              animation:"fadeUp .3s var(--ease) .8s both"}}>
               <button onClick={()=>{setShowBookComplete(false);openJournal(activeBook);}}
-                style={{background:"linear-gradient(135deg,#7c3aed,#9333ea)",border:"none",
-                  borderRadius:14,color:"#f5f0ff",cursor:"pointer",padding:"15px",
-                  fontFamily:"'Space Mono',monospace",fontSize:11,fontWeight:700,
-                  display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                className="btn btn-green" style={{width:"100%",padding:15,borderRadius:12,fontSize:13}}>
                 <PenLine size={15}/> Write about it
               </button>
-              <button className="btn-glass"
+              <button className="btn btn-ghost" style={{width:"100%",padding:12,borderRadius:12}}
                 onClick={()=>{setShowBookComplete(false);setScreen(fromScreen);fetchBooks();}}>
                 Back to {fromScreen==="shelf"?"Shelf":"Library"}
               </button>
@@ -966,115 +1235,116 @@ export default function App() {
         </>
       )}
 
-      {/* ════════════════════════════════════════════════════════ LIBRARY */}
+      {/* ── Mini-player */}
+      {showMini&&activeBook&&(
+        <MiniPlayer book={activeBook} isPlaying={isPlaying} progress={progress}
+          onToggle={handlePlay} onOpen={()=>{setFromScreen(screen);setScreen("player");}}/>
+      )}
+
+      {/* ── Bottom nav */}
+      {showNav&&<BottomNav screen={screen} setScreen={setScreen} finishedCount={finishedCount}/>}
+
+      {/* ════ LIBRARY ════════════════════════════════════════════════════════ */}
       {screen==="library"&&(
-        <div style={{maxWidth:600,margin:"0 auto",padding:"2.5rem 1rem 1rem",position:"relative",zIndex:1}}>
+        <div style={{maxWidth:580,margin:"0 auto",padding:"24px 16px 8px",position:"relative",zIndex:1}}>
           {/* Header */}
-          <div style={{marginBottom:"2rem",textAlign:"center"}}>
-            <p style={{fontFamily:"'Space Mono',monospace",fontSize:10,letterSpacing:"0.32em",
-              color:"rgba(124,58,237,0.9)",textTransform:"uppercase",marginBottom:12,
-              animation:"shimmer 4s ease infinite"}}>
-              your personal sanctuary
-            </p>
-            <h1 style={{fontSize:"clamp(2rem,7vw,3rem)",fontWeight:300,color:"#f5f0ff",
-              lineHeight:1.1,marginBottom:8,
-              background:"linear-gradient(135deg,#f5f0ff 0%,#c084fc 60%,#7c3aed 100%)",
-              WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
-              Welcome, Victory
-            </h1>
-            <p style={{fontFamily:"'Crimson Pro',serif",fontSize:"1.05rem",fontStyle:"italic",
-              color:"rgba(155,124,200,0.7)",fontWeight:300}}>
-              Victory's Book Collection
-            </p>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:24}}>
+            <div>
+              <p className="lbl" style={{color:"var(--green)",marginBottom:6}}>your sanctuary</p>
+              <h1 style={{fontSize:"clamp(1.7rem,6vw,2.4rem)",fontWeight:700,color:"var(--t1)",lineHeight:1.1}}>
+                Good day, Victory
+              </h1>
+              <p style={{fontSize:13,color:"var(--t2)",marginTop:5,fontFamily:"Crimson Pro,Georgia,serif",fontStyle:"italic"}}>
+                Victory's Book Collection
+              </p>
+            </div>
+            <ThemeToggle theme={theme} onToggle={()=>setTheme(t=>t==="dark"?"light":"dark")}/>
           </div>
 
-          {/* Stats row */}
+          {/* Stats bar */}
           {!loadingBooks&&books.length>0&&(
-            <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:"1.75rem",flexWrap:"wrap",
-              animation:"fadeUp 0.4s ease 0.1s both"}}>
+            <div style={{display:"flex",gap:8,marginBottom:20,animation:"fadeUp .4s var(--ease) .05s both"}}>
               {[
-                {icon:<BookOpen size={11}/>, label:`${books.length} books`},
-                finishedCount>0&&{icon:<CheckCircle2 size={11}/>, label:`${finishedCount} finished`},
-                totalHours>0&&{icon:<Clock size={11}/>, label:`~${totalHours} hrs`},
+                {label:`${books.length}`,sub:"books"},
+                finishedCount>0&&{label:`${finishedCount}`,sub:"finished"},
+                totalHours>0&&{label:`${totalHours}h`,sub:"listened"},
               ].filter(Boolean).map((s,i)=>(
-                <div key={i} style={{display:"inline-flex",alignItems:"center",gap:6,
-                  background:"rgba(124,58,237,0.1)",border:"0.5px solid rgba(124,58,237,0.2)",
-                  borderRadius:20,padding:"5px 14px",fontFamily:"'Space Mono',monospace",
-                  fontSize:10,color:"rgba(155,124,200,0.9)"}}>
-                  {s.icon}{s.label}
+                <div key={i} style={{flex:1,background:"var(--bg3)",border:"1px solid var(--border)",
+                  borderRadius:12,padding:"12px 10px",textAlign:"center"}}>
+                  <p style={{fontSize:"1.3rem",fontWeight:700,color:"var(--green)",lineHeight:1}}>{s.label}</p>
+                  <p style={{fontSize:10,color:"var(--t3)",fontWeight:600,letterSpacing:".07em",textTransform:"uppercase",marginTop:3}}>{s.sub}</p>
                 </div>
               ))}
             </div>
           )}
 
           {/* Drop zone */}
-          <div className={`drop-zone ${dragOver?"over":""}`} style={{marginBottom:"1.25rem"}}
+          <input ref={fileInputRef} type="file" accept=".pdf" style={{display:"none"}}
+            onChange={e=>handleFilePicked(e.target.files[0])}/>
+          <div className={`dropzone ${dragOver?"over":""}`} style={{marginBottom:12,animation:"fadeUp .4s var(--ease) .1s both"}}
             onClick={()=>fileInputRef.current?.click()}
             onDragOver={e=>{e.preventDefault();setDragOver(true);}}
             onDragLeave={()=>setDragOver(false)}
             onDrop={e=>{e.preventDefault();setDragOver(false);handleFilePicked(e.dataTransfer.files[0]);}}>
-            <input ref={fileInputRef} type="file" accept=".pdf" style={{display:"none"}}
-              onChange={e=>handleFilePicked(e.target.files[0])}/>
-            {isLoading&&loadingMsg.includes("PDF")?(
-              <div>
-                <div style={{width:24,height:24,border:"2px solid #c084fc",borderTopColor:"transparent",
-                  borderRadius:"50%",margin:"0 auto 12px",animation:"spin 0.8s linear infinite"}}/>
-                <p style={{color:"rgba(155,124,200,0.8)",fontSize:13,animation:"pulse 1.5s ease infinite"}}>{loadingMsg}</p>
+            {isLoading&&loadingMsg.includes("Extract")?(
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
+                <div style={{width:22,height:22,border:"2px solid var(--green)",borderTopColor:"transparent",
+                  borderRadius:"50%",animation:"spin .8s linear infinite"}}/>
+                <p style={{fontSize:13,color:"var(--t2)",animation:"pulse 1.5s ease infinite"}}>{loadingMsg}</p>
               </div>
             ):(
               <>
-                <div style={{width:48,height:48,borderRadius:"50%",margin:"0 auto 14px",
-                  background:"rgba(124,58,237,0.12)",border:"0.5px solid rgba(124,58,237,0.2)",
-                  display:"flex",alignItems:"center",justifyContent:"center"}}>
-                  <Upload size={22} color="rgba(192,132,252,0.8)"/>
+                <div style={{width:48,height:48,borderRadius:"50%",margin:"0 auto 12px",
+                  background:"var(--green-dim)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <Upload size={22} color="var(--green)"/>
                 </div>
-                <p style={{color:"rgba(155,124,200,0.8)",fontSize:14,marginBottom:6}}>Add a book to your collection</p>
-                <p style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"rgba(61,47,92,0.9)"}}>drop PDF here · click to browse</p>
+                <p style={{fontSize:14,color:"var(--t1)",fontWeight:600,marginBottom:4}}>Add a book</p>
+                <p style={{fontSize:12,color:"var(--t3)"}}>Drop a PDF here or click to browse</p>
               </>
             )}
           </div>
 
           {error&&(
-            <div style={{background:"rgba(200,60,60,0.07)",border:"0.5px solid rgba(200,60,60,0.2)",
-              borderRadius:10,padding:"10px 14px",marginBottom:14,display:"flex",alignItems:"center",gap:8}}>
-              <X size={13} color="#f87171"/>
-              <p style={{fontFamily:"'Space Mono',monospace",fontSize:11,color:"#f87171"}}>{error}</p>
+            <div style={{background:"rgba(239,68,68,.07)",border:"1px solid rgba(239,68,68,.2)",
+              borderRadius:10,padding:"10px 14px",marginBottom:12,display:"flex",gap:8,alignItems:"center"}}>
+              <X size={13} color="#ef4444"/>
+              <p style={{fontSize:12,color:"#ef4444",fontFamily:"Inter,system-ui,sans-serif"}}>{error}</p>
             </div>
           )}
 
           {/* Search */}
           {books.length>0&&(
-            <div className="search-wrap" style={{position:"relative",marginBottom:10}}>
-              <Search size={15} color="rgba(74,58,104,0.8)"
-                style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}}/>
-              <input placeholder="Search by title or author…" value={searchQ}
-                onChange={e=>setSearchQ(e.target.value)}/>
+            <div className="search-wrap" style={{marginBottom:10,animation:"fadeUp .4s var(--ease) .12s both"}}>
+              <Search size={15} className="ico"/>
+              <input className="inp search-inp" placeholder="Search books or authors…"
+                value={searchQ} onChange={e=>setSearchQ(e.target.value)}/>
             </div>
           )}
 
           {/* Category chips */}
           {books.length>0&&(
-            <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4,marginBottom:"1.5rem",scrollbarWidth:"none"}}>
+            <div style={{display:"flex",gap:7,overflowX:"auto",paddingBottom:4,marginBottom:18,
+              scrollbarWidth:"none",animation:"fadeUp .4s var(--ease) .14s both"}}>
               {presentCats.map(c=>(
                 <button key={c} className={`chip ${filterCat===c?"on":""}`} onClick={()=>setFilterCat(c)}>
-                  {c!=="All"&&<Tag size={10}/>}{c}
+                  {c!=="All"&&<Tag size={9}/>}{c}
                 </button>
               ))}
             </div>
           )}
 
           {/* Book list */}
-          {loadingBooks?(
-            <div style={{textAlign:"center",padding:"3rem"}}>
-              <div style={{width:28,height:28,border:"2px solid rgba(124,58,237,0.7)",
-                borderTopColor:"transparent",borderRadius:"50%",margin:"0 auto",animation:"spin 0.8s linear infinite"}}/>
-            </div>
-          ):filteredBooks.length===0?(
+          {loadingBooks?<SkeletonCards/>:filteredBooks.length===0?(
             <div style={{textAlign:"center",padding:"4rem 1rem"}}>
-              <BookOpen size={40} color="rgba(45,31,74,0.6)" style={{margin:"0 auto 16px"}}/>
-              <p style={{color:"rgba(45,31,74,0.9)",fontSize:14,fontFamily:"'Space Mono',monospace"}}>
-                {books.length===0?"No books yet — upload your first PDF above":"No books match your search"}
+              <BookOpen size={40} color="var(--t3)" style={{margin:"0 auto 14px"}}/>
+              <p style={{fontSize:14,color:"var(--t2)",marginBottom:4}}>
+                {books.length===0?"No books yet — add your first PDF above":"No books match your search"}
               </p>
+              {books.length>0&&searchQ&&(
+                <button className="btn btn-ghost" onClick={()=>{setSearchQ("");setFilterCat("All");}} style={{marginTop:12}}>
+                  Clear search
+                </button>
+              )}
             </div>
           ):(
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
@@ -1084,46 +1354,43 @@ export default function App() {
                 const last=prog?.last_opened?new Date(prog.last_opened).toLocaleDateString("en-US",{month:"short",day:"numeric"}):null;
                 const fin=book.status==="finished";
                 return (
-                  <div key={book.id} className="book-card fade-up"
-                    style={{animationDelay:`${i*0.06}s`}} onClick={()=>openBook(book)}>
-                    <button className="delete-btn" onClick={e=>deleteBook(e,book.id,book.file_path)}>
+                  <div key={book.id} className="book-card fade-up" style={{animationDelay:`${i*.06}s`}}
+                    onClick={()=>openBook(book)}>
+                    <button className="del-btn" onClick={e=>deleteBook(e,book.id,book.file_path)}>
                       <Trash2 size={13}/>
                     </button>
-                    <div style={{display:"flex",gap:14,alignItems:"flex-start"}}>
-                      <BookCover book={book} size="sm" onClick={()=>openBook(book)}/>
-                      <div style={{flex:1,minWidth:0,paddingRight:20}}>
-                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:5}}>
-                          <p style={{fontSize:"1rem",fontWeight:600,color:"#f5f0ff",lineHeight:1.3}}>{book.title}</p>
-                          <span style={{fontFamily:"'Space Mono',monospace",fontSize:11,flexShrink:0,marginLeft:8,
-                            color:fin?"#34d399":pct>0?"#c084fc":"rgba(61,47,92,0.9)"}}>
-                            {fin?<CheckCircle2 size={14}/>:`${pct}%`}
-                          </span>
+                    <button className="edit-btn" onClick={e=>openEdit(e,book)}>
+                      <Edit2 size={13}/>
+                    </button>
+                    <BookCover book={book} size="sm" onClick={()=>openBook(book)}/>
+                    <div style={{flex:1,minWidth:0,paddingRight:52}}>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                        <p style={{fontWeight:600,fontSize:14,color:"var(--t1)",lineHeight:1.3}}>{book.title}</p>
+                        <span style={{fontSize:12,fontWeight:700,color:fin?"var(--green)":pct>0?"var(--green)":"var(--t3)",
+                          flexShrink:0,marginLeft:8}}>
+                          {fin?<CheckCircle2 size={14} color="var(--green)"/>:`${pct}%`}
+                        </span>
+                      </div>
+                      {book.author&&book.author!=="Unknown Author"&&(
+                        <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:6}}>
+                          <User size={10} color="var(--t3)"/>
+                          <p style={{fontSize:12,color:"var(--t2)",fontStyle:"italic"}}>{book.author}</p>
                         </div>
-                        {book.author&&book.author!=="Unknown Author"&&(
-                          <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:6}}>
-                            <User size={10} color="rgba(124,100,154,0.7)"/>
-                            <p style={{fontSize:12,color:"rgba(124,100,154,0.8)",fontStyle:"italic"}}>{book.author}</p>
-                          </div>
+                      )}
+                      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
+                        {book.category&&book.category!=="Uncategorized"&&(
+                          <span style={{background:"var(--green-dim)",borderRadius:20,padding:"2px 8px",
+                            fontSize:10,fontWeight:600,color:"var(--green)",display:"flex",alignItems:"center",gap:3}}>
+                            <Tag size={8}/>{book.category}
+                          </span>
                         )}
-                        <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap",marginBottom:8}}>
-                          {book.category&&book.category!=="Uncategorized"&&(
-                            <span style={{fontFamily:"'Space Mono',monospace",fontSize:9,color:"rgba(124,58,237,0.9)",
-                              background:"rgba(124,58,237,0.1)",borderRadius:10,padding:"2px 8px",
-                              display:"flex",alignItems:"center",gap:4}}>
-                              <Tag size={8}/>{book.category}
-                            </span>
-                          )}
-                          {last&&<span style={{fontFamily:"'Space Mono',monospace",fontSize:9,color:"rgba(74,58,104,0.9)"}}>{last}</span>}
-                          <span style={{fontFamily:"'Space Mono',monospace",fontSize:9,color:"rgba(61,47,92,0.9)"}}>
-                            {(book.word_count||0).toLocaleString()} words
-                          </span>
-                        </div>
-                        <div className="prog-track">
-                          <div className={`prog-fill ${fin?"green":""}`} style={{width:`${fin?100:pct}%`,transition:"none"}}/>
-                        </div>
-                        <p style={{fontFamily:"'Space Mono',monospace",fontSize:9,color:"rgba(61,47,92,0.9)",marginTop:5}}>
-                          {fin?"complete":pct===0?"not started":"in progress"}
-                        </p>
+                        {last&&<span style={{fontSize:10,color:"var(--t3)"}}>{last}</span>}
+                        <span style={{fontSize:10,color:"var(--t3)"}}>
+                          {(book.word_count||0).toLocaleString()}w
+                        </span>
+                      </div>
+                      <div className={`prog ${fin?"":"thick"}`}>
+                        <div className="prog-fill" style={{width:`${fin?100:pct}%`,transition:"none"}}/>
                       </div>
                     </div>
                   </div>
@@ -1133,83 +1400,150 @@ export default function App() {
           )}
 
           {/* Quote */}
-          <div style={{background:"rgba(124,58,237,0.05)",border:"0.5px solid rgba(124,58,237,0.12)",
-            borderRadius:16,padding:"1.4rem 1.6rem",marginTop:"1.75rem",
-            position:"relative",overflow:"hidden"}}>
-            <div style={{position:"absolute",top:-20,right:-20,width:80,height:80,
-              borderRadius:"50%",background:"rgba(124,58,237,0.06)",filter:"blur(20px)"}}/>
-            <p style={{fontFamily:"'Crimson Pro',serif",fontSize:"1.05rem",fontStyle:"italic",
-              color:"rgba(155,124,200,0.9)",lineHeight:1.7,marginBottom:10}}>"{quote.text}"</p>
-            <p style={{fontFamily:"'Space Mono',monospace",fontSize:9,color:"rgba(74,58,104,0.9)",
-              letterSpacing:"0.1em"}}>— {quote.author}</p>
+          <div style={{background:"var(--bg3)",border:"1px solid var(--border)",borderRadius:16,
+            padding:"20px 22px",marginTop:22,
+            animation:"fadeUp .4s var(--ease) .2s both"}}>
+            <p style={{fontFamily:"Crimson Pro,Georgia,serif",fontSize:"1.05rem",fontStyle:"italic",
+              color:"var(--t2)",lineHeight:1.7,marginBottom:10}}>"{quote.text}"</p>
+            <p className="lbl" style={{margin:0}}>— {quote.author}</p>
           </div>
         </div>
       )}
 
-      {/* ════════════════════════════════════════════════════════ PLAYER */}
-      {screen==="player"&&(
-        <div style={{maxWidth:500,margin:"0 auto",padding:"2rem 1rem",position:"relative",zIndex:1}}>
-          <button className="btn-ghost" onClick={()=>{
-            setScreen(fromScreen);setIsPlaying(false);audioRef.current?.pause();
-            saveProgress(currentChunk,audioRef.current?.currentTime||0);fetchBooks();
-          }} style={{marginBottom:"2rem",gap:8}}>
-            <ArrowLeft size={14}/> {fromScreen==="shelf"?"Shelf":"Library"}
+      {/* ════ PLAYER ═════════════════════════════════════════════════════════ */}
+      {screen==="player"&&activeBook&&(
+        <div style={{maxWidth:480,margin:"0 auto",padding:"20px 16px",position:"relative",zIndex:1}}>
+          {/* Dynamic bg based on book color */}
+          <div style={{position:"fixed",inset:0,
+            background:`radial-gradient(ellipse at top,rgba(${theme==="dark"?"29,185,84":"29,185,84"},.1) 0%,var(--bg) 65%)`,
+            pointerEvents:"none",zIndex:0}}/>
+
+          <button className="btn btn-icon" style={{marginBottom:24,position:"relative"}}
+            onClick={()=>{setScreen(fromScreen);audioRef.current&&!isPlaying&&null;fetchBooks();}}>
+            <ArrowLeft size={16}/>
           </button>
 
-          {/* Book cover + info */}
-          <div style={{display:"flex",flexDirection:"column",alignItems:"center",marginBottom:"2rem"}}>
-            <div style={{marginBottom:"1.25rem",animation:"popIn 0.5s cubic-bezier(0.34,1.56,0.64,1)"}}>
-              <BookCover book={activeBook||{title:""}} size="lg"/>
-            </div>
-            <p style={{fontFamily:"'Space Mono',monospace",fontSize:10,letterSpacing:"0.2em",
-              color:"rgba(192,132,252,0.8)",textTransform:"uppercase",marginBottom:8}}>Now playing</p>
-            <h2 style={{fontSize:"clamp(1.1rem,4vw,1.5rem)",fontWeight:300,color:"#f5f0ff",
-              lineHeight:1.3,textAlign:"center",marginBottom:5,maxWidth:340}}>
-              {activeBook?.title}
-            </h2>
-            {activeBook?.author&&activeBook.author!=="Unknown Author"&&(
-              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:5}}>
-                <User size={11} color="rgba(124,100,154,0.7)"/>
-                <p style={{fontSize:13,color:"rgba(124,100,154,0.8)",fontStyle:"italic"}}>{activeBook.author}</p>
-              </div>
-            )}
-            <p style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"rgba(74,58,104,0.9)"}}>
-              {(activeBook?.word_count||0).toLocaleString()} words · {chunks.length} parts
-              {cachedCount>0&&<span style={{color:allCached?"#34d399":"#c084fc"}}> · {cachedCount}/{chunks.length} ready</span>}
-            </p>
+          {/* Cover art */}
+          <div style={{display:"flex",justifyContent:"center",marginBottom:28,position:"relative"}}>
+            <BookCover book={activeBook} size="lg" playing={isPlaying}/>
           </div>
 
-          {/* Waveform visualizer */}
-          <div style={{marginBottom:"1.5rem"}}>
+          {/* Title + edit */}
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+            <div style={{flex:1,minWidth:0}}>
+              <h2 style={{fontSize:"1.35rem",fontWeight:700,color:"var(--t1)",lineHeight:1.3,marginBottom:4}}>
+                {activeBook.title}
+              </h2>
+              {activeBook.author&&activeBook.author!=="Unknown Author"&&(
+                <div style={{display:"flex",alignItems:"center",gap:5}}>
+                  <User size={11} color="var(--t3)"/>
+                  <p style={{fontSize:13,color:"var(--t2)",fontStyle:"italic"}}>{activeBook.author}</p>
+                </div>
+              )}
+            </div>
+            <button className="btn btn-icon" onClick={e=>openEdit(e,activeBook)} style={{marginLeft:10,flexShrink:0}}>
+              <Edit2 size={14}/>
+            </button>
+          </div>
+
+          <p style={{fontSize:11,color:"var(--t3)",fontWeight:600,letterSpacing:".06em",textTransform:"uppercase",
+            marginBottom:20}}>
+            Part {currentChunk+1}/{chunks.length}
+            {cachedCount>0&&<span style={{color:allCached?"var(--green)":"var(--t3)",marginLeft:8}}>
+              · {cachedCount}/{chunks.length} buffered
+            </span>}
+          </p>
+
+          {/* Waveform */}
+          <div style={{marginBottom:20}}>
             <Waveform playing={isPlaying}/>
           </div>
 
+          {/* Overall progress */}
+          <div style={{marginBottom:4}}>
+            <div className="prog thick" style={{cursor:"pointer"}} onClick={e=>{
+              const rect=e.currentTarget.getBoundingClientRect();
+              const pct=(e.clientX-rect.left)/rect.width;
+              const targetChunk=Math.floor(pct*chunks.length);
+              if(targetChunk!==currentChunk) playChunk(targetChunk);
+            }}>
+              <div className="prog-fill" style={{width:`${progress}%`}}/>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",marginTop:5}}>
+              <span style={{fontSize:10,color:"var(--t3)"}}>Book: {Math.round(progress)}%</span>
+              <span style={{fontSize:10,color:"var(--t3)"}}>~{Math.round((100-progress)/100*(activeBook.word_count||0)/150/60*10)/10}h left</span>
+            </div>
+          </div>
+
+          {/* Chunk scrubber */}
+          <div style={{marginBottom:24}}>
+            <div className="prog scrub" onClick={e=>{
+              if(!audioRef.current||!duration) return;
+              const rect=e.currentTarget.getBoundingClientRect();
+              audioRef.current.currentTime=((e.clientX-rect.left)/rect.width)*duration;
+            }}>
+              <div className="prog-fill" style={{width:`${duration?(currentTime/duration)*100:0}%`}}/>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",marginTop:5}}>
+              <span style={{fontSize:10,color:"var(--t3)"}}>{fmt(currentTime)}</span>
+              <span style={{fontSize:10,color:"var(--t3)"}}>{fmt(duration)}</span>
+            </div>
+          </div>
+
+          {/* Transport controls */}
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:24}}>
+            <button className="btn btn-icon" onClick={()=>{if(currentChunk>0)playChunk(currentChunk-1);}}
+              disabled={currentChunk===0}><SkipBack size={18}/></button>
+            <button className="btn btn-icon" onClick={()=>handleSkip(-10)}><Rewind size={18}/></button>
+            <button className="play-btn" onClick={handlePlay} disabled={isLoading}>
+              {isLoading
+                ?<div style={{width:22,height:22,border:"2.5px solid #000",borderTopColor:"transparent",
+                    borderRadius:"50%",animation:"spin .8s linear infinite"}}/>
+                :isPlaying
+                  ?<Pause size={26} fill="#000"/>
+                  :<Play size={26} fill="#000" style={{marginLeft:3}}/>}
+            </button>
+            <button className="btn btn-icon" onClick={()=>handleSkip(10)}><FastForward size={18}/></button>
+            <button className="btn btn-icon" onClick={()=>{if(currentChunk<chunks.length-1)playChunk(currentChunk+1);}}
+              disabled={currentChunk===chunks.length-1}><SkipForward size={18}/></button>
+          </div>
+
+          {isLoading&&loadingMsg&&(
+            <p style={{fontSize:11,color:"var(--green)",textAlign:"center",marginBottom:16,
+              animation:"pulse 1.5s ease infinite",fontWeight:600}}>{loadingMsg}</p>
+          )}
+
+          {/* Speed */}
+          <div style={{display:"flex",alignItems:"center",gap:6,justifyContent:"center",marginBottom:20}}>
+            <span style={{fontSize:10,color:"var(--t3)",fontWeight:600,letterSpacing:".06em",marginRight:4}}>SPEED</span>
+            {[0.75,1,1.25,1.5,1.75,2].map(s=>(
+              <button key={s} className={`spd ${speed===s?"on":""}`}
+                onClick={()=>{setSpeed(s);if(audioRef.current)audioRef.current.playbackRate=s;}}>{s}×</button>
+            ))}
+          </div>
+
           {/* Voice selector */}
-          <div style={{marginBottom:"1.25rem",position:"relative"}} ref={voiceDropRef}>
-            <label className="label-sm" style={{display:"flex",alignItems:"center",gap:5,marginBottom:8}}>
-              <Mic2 size={11}/> Voice
-            </label>
-            <button className="btn-glass" onClick={()=>setShowVoiceDrop(v=>!v)}
-              style={{width:"100%",justifyContent:"space-between",padding:"11px 14px",
-                borderColor:showVoiceDrop?"rgba(192,132,252,0.45)":"rgba(45,31,74,0.8)",
-                color:showVoiceDrop?"#c084fc":"rgba(167,139,202,0.9)"}}>
-              <span style={{display:"flex",alignItems:"center",gap:8}}>
-                <span style={{fontSize:14,color:"#f5f0ff",fontFamily:"'Crimson Pro',serif"}}>{voice.label}</span>
-                <span style={{fontSize:10}}>{voice.desc}</span>
+          <div style={{marginBottom:16,position:"relative"}} ref={voiceDropRef}>
+            <label className="lbl"><Mic2 size={11} style={{display:"inline",marginRight:5}}/>Voice</label>
+            <button className="btn btn-ghost" onClick={()=>setShowVoiceDrop(v=>!v)}
+              style={{width:"100%",justifyContent:"space-between",padding:"11px 14px",borderRadius:10}}>
+              <span>
+                <span style={{fontWeight:600,color:"var(--t1)",marginRight:8}}>{voice.label}</span>
+                <span style={{fontSize:11,color:"var(--t2)"}}>{voice.desc}</span>
               </span>
               {showVoiceDrop?<ChevronUp size={13}/>:<ChevronDown size={13}/>}
             </button>
             {showVoiceDrop&&(
-              <div className="voice-dropdown">
+              <div className="voice-drop">
                 {VOICES.map(v=>(
                   <div key={v.id} className={`voice-opt ${voice.id===v.id?"on":""}`}
                     onClick={()=>{setVoice(v);setShowVoiceDrop(false);setIsPlaying(false);audioRef.current?.pause();}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <div style={{width:6,height:6,borderRadius:"50%",
-                        background:voice.id===v.id?"#c084fc":"rgba(45,31,74,0.8)"}}/>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <div style={{width:7,height:7,borderRadius:"50%",
+                        background:voice.id===v.id?"var(--green)":"var(--border)"}}/>
                       <div>
-                        <p style={{fontSize:14,color:"#f5f0ff",fontFamily:"'Crimson Pro',serif",marginBottom:1}}>{v.label}</p>
-                        <p style={{fontFamily:"'Space Mono',monospace",fontSize:9,color:"rgba(74,58,104,0.9)"}}>{v.desc} · {v.lang}</p>
+                        <p style={{fontWeight:600,fontSize:13,color:"var(--t1)",marginBottom:1}}>{v.label}</p>
+                        <p style={{fontSize:10,color:"var(--t3)"}}>{v.desc} · {v.lang}</p>
                       </div>
                     </div>
                   </div>
@@ -1218,161 +1552,73 @@ export default function App() {
             )}
           </div>
 
-          {/* Progress */}
-          <div className="card" style={{marginBottom:"1rem"}}>
-            <div style={{marginBottom:"1.1rem"}}>
-              <div className="prog-track thick">
-                <div className="prog-fill" style={{width:`${progress}%`}}/>
-              </div>
-              <div style={{display:"flex",justifyContent:"space-between",marginTop:6}}>
-                <span style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"rgba(74,58,104,0.9)"}}>
-                  Part {currentChunk+1} of {chunks.length}
-                </span>
-                <span style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"rgba(74,58,104,0.9)"}}>
-                  {Math.round(progress)}%
-                </span>
-              </div>
-            </div>
-
-            {/* Scrubber */}
-            <div style={{marginBottom:"1.25rem"}}>
-              <div className="prog-track" onClick={e=>{
-                if(!audioRef.current||!duration) return;
-                const rect=e.currentTarget.getBoundingClientRect();
-                audioRef.current.currentTime=((e.clientX-rect.left)/rect.width)*duration;
-              }} style={{cursor:"pointer"}}>
-                <div className="prog-fill" style={{width:`${duration?(currentTime/duration)*100:0}%`}}/>
-              </div>
-              <div style={{display:"flex",justifyContent:"space-between",marginTop:5}}>
-                <span style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"rgba(61,47,92,0.9)"}}>{fmt(currentTime)}</span>
-                <span style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"rgba(61,47,92,0.9)"}}>{fmt(duration)}</span>
-              </div>
-            </div>
-
-            {/* Controls */}
-            <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12,marginBottom:"1.25rem"}}>
-              <button className="btn-ghost" onClick={()=>{if(currentChunk>0)playChunk(currentChunk-1);}}
-                disabled={currentChunk===0} style={{padding:"9px 10px"}}>
-                <SkipBack size={16}/>
-              </button>
-              <button className="btn-ghost" onClick={()=>handleSkip(-10)} style={{padding:"9px 10px"}}>
-                <Rewind size={16}/>
-              </button>
-              <button className="btn-primary" onClick={handlePlay} disabled={isLoading}
-                style={{width:68,height:68,fontSize:20}}>
-                {isLoading
-                  ?<div style={{width:22,height:22,border:"2.5px solid rgba(245,240,255,0.9)",
-                      borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
-                  :isPlaying?<Pause size={24} fill="currentColor"/>:<Play size={24} fill="currentColor" style={{marginLeft:3}}/>}
-              </button>
-              <button className="btn-ghost" onClick={()=>handleSkip(10)} style={{padding:"9px 10px"}}>
-                <FastForward size={16}/>
-              </button>
-              <button className="btn-ghost" onClick={()=>{if(currentChunk<chunks.length-1)playChunk(currentChunk+1);}}
-                disabled={currentChunk===chunks.length-1} style={{padding:"9px 10px"}}>
-                <SkipForward size={16}/>
-              </button>
-            </div>
-
-            {/* Speed */}
-            <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-              <span style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"rgba(61,47,92,0.9)",marginRight:4}}>SPEED</span>
-              {[0.75,1,1.25,1.5,1.75,2].map(s=>(
-                <button key={s} className={`speed-btn ${speed===s?"active":""}`}
-                  onClick={()=>{setSpeed(s);if(audioRef.current)audioRef.current.playbackRate=s;}}>{s}×</button>
-              ))}
-            </div>
-
-            {isLoading&&loadingMsg&&(
-              <p style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"#c084fc",
-                textAlign:"center",marginTop:"1rem",animation:"pulse 1.5s ease infinite"}}>{loadingMsg}</p>
-            )}
-          </div>
-
+          {/* Actions */}
           {showRegenConfirm&&(
-            <div style={{background:"rgba(192,132,252,0.05)",border:"0.5px solid rgba(192,132,252,0.18)",
-              borderRadius:12,padding:"14px",marginBottom:10}}>
-              <p style={{fontFamily:"'Space Mono',monospace",fontSize:11,color:"#c084fc",marginBottom:10}}>
-                Regenerate all audio as {voice.label}?
+            <div style={{background:"var(--bg3)",border:"1px solid var(--border)",borderRadius:12,
+              padding:14,marginBottom:12}}>
+              <p style={{fontSize:12,color:"var(--t2)",marginBottom:12}}>
+                Regenerate all audio as {voice.label}? This replaces cached audio.
               </p>
               <div style={{display:"flex",gap:8}}>
-                <button className="btn-ghost" onClick={()=>setShowRegenConfirm(false)} style={{flex:1}}>Cancel</button>
-                <button className="btn-danger" onClick={()=>handlePregenerate(true)} style={{flex:1}}>Regenerate</button>
+                <button className="btn btn-ghost" onClick={()=>setShowRegenConfirm(false)} style={{flex:1,padding:"9px 0"}}>Cancel</button>
+                <button className="btn btn-danger" onClick={()=>handlePregenerate(true)} style={{flex:1,padding:"9px 0"}}>Regenerate</button>
               </div>
             </div>
           )}
 
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
-            <button className="btn-glass" onClick={()=>handlePregenerate(false)}
-              disabled={!!pregenProgress||allCached} style={{fontSize:10}}>
-              {pregenProgress?<><div style={{width:11,height:11,border:"1.5px solid #c084fc",borderTopColor:"transparent",
-                borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/> {pregenProgress.done}/{pregenProgress.total}</>
-              :allCached?<><CheckCircle2 size={12}/> All ready</>:<><Zap size={12}/> Pre-buffer all</>}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
+            <button className="btn btn-ghost" onClick={()=>handlePregenerate(false)}
+              disabled={!!pregenProgress||allCached} style={{fontSize:11,padding:"10px 0"}}>
+              {pregenProgress
+                ?<><div style={{width:11,height:11,border:"1.5px solid var(--green)",borderTopColor:"transparent",
+                    borderRadius:"50%",animation:"spin .8s linear infinite"}}/> {pregenProgress.done}/{pregenProgress.total}</>
+                :allCached?<><CheckCircle2 size={12} color="var(--green)"/> All buffered</>
+                :<><Zap size={12}/> Pre-buffer all</>}
             </button>
-            <button className="btn-danger" onClick={()=>setShowRegenConfirm(true)}
-              disabled={!!pregenProgress} style={{fontSize:10}}>
-              <RefreshCw size={12}/> Regenerate
+            <button className="btn btn-ghost" onClick={()=>setShowRegenConfirm(true)}
+              disabled={!!pregenProgress} style={{fontSize:11,padding:"10px 0"}}>
+              <RefreshCw size={12}/> Regen voice
             </button>
-            <button className="btn-glass" onClick={handleDownload}
-              disabled={isLoading||cachedCount===0} style={{gridColumn:"1/-1",fontSize:10}}>
-              <Download size={12}/> Download MP3 — {voice.label}
+            <button className="btn btn-ghost" onClick={handleDownload}
+              disabled={isLoading||cachedCount===0} style={{gridColumn:"1/-1",fontSize:11,padding:"10px 0"}}>
+              <Download size={12}/> Download full MP3
             </button>
           </div>
 
           {error&&(
-            <div style={{background:"rgba(200,60,60,0.07)",border:"0.5px solid rgba(200,60,60,0.2)",
-              borderRadius:10,padding:"10px 14px",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
-              <X size={13} color="#f87171"/>
-              <p style={{fontFamily:"'Space Mono',monospace",fontSize:11,color:"#f87171"}}>{error}</p>
+            <div style={{background:"rgba(239,68,68,.07)",border:"1px solid rgba(239,68,68,.2)",
+              borderRadius:10,padding:"10px 14px",display:"flex",gap:8,alignItems:"center",marginBottom:10}}>
+              <X size={13} color="#ef4444"/>
+              <p style={{fontSize:12,color:"#ef4444"}}>{error}</p>
             </div>
           )}
-
-          <p style={{fontFamily:"'Space Mono',monospace",fontSize:9,color:"rgba(30,21,48,0.9)",
-            textAlign:"center",marginTop:6}}>
-            3 chunks pre-buffered · progress auto-saved
-          </p>
         </div>
       )}
 
-      {/* ════════════════════════════════════════════════════════ SHELF */}
+      {/* ════ SHELF ══════════════════════════════════════════════════════════ */}
       {screen==="shelf"&&(
-        <div style={{maxWidth:600,margin:"0 auto",padding:"2.5rem 1rem 1rem",position:"relative",zIndex:1}}>
-          <div style={{marginBottom:"1.75rem"}}>
-            <p style={{fontFamily:"'Space Mono',monospace",fontSize:10,letterSpacing:"0.25em",
-              color:"rgba(192,132,252,0.8)",textTransform:"uppercase",marginBottom:8}}>finished books</p>
-            <h2 style={{fontSize:"clamp(1.4rem,5vw,2.2rem)",fontWeight:300,color:"#f5f0ff",
-              background:"linear-gradient(135deg,#f5f0ff,#c084fc)",
-              WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
-              Your Shelf
-            </h2>
-            {finishedCount>0&&(
-              <p style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"rgba(74,58,104,0.9)",marginTop:6}}>
-                {finishedCount} {finishedCount===1?"book":"books"} · ~{totalHours} hrs total
-              </p>
-            )}
+        <div style={{maxWidth:580,margin:"0 auto",padding:"24px 16px 8px",position:"relative",zIndex:1}}>
+          <div style={{marginBottom:20}}>
+            <p className="lbl" style={{color:"var(--green)"}}>finished books</p>
+            <h2 style={{fontSize:"clamp(1.4rem,5vw,2rem)",fontWeight:700,color:"var(--t1)"}}>Your Shelf</h2>
+            {finishedCount>0&&<p style={{fontSize:12,color:"var(--t3)",marginTop:5}}>
+              {finishedCount} book{finishedCount===1?"":"s"} · ~{totalHours}h total
+            </p>}
           </div>
 
-          {/* Sort */}
           {finishedCount>0&&(
-            <div style={{display:"flex",gap:8,marginBottom:"1.5rem",flexWrap:"wrap"}}>
-              {[{id:"date",label:"Recent"},{id:"rating",label:"Top rated"},{id:"author",label:"Author"},{id:"category",label:"Category"}].map(s=>(
-                <button key={s.id} className={`chip ${shelfSort===s.id?"on":""}`} onClick={()=>setShelfSort(s.id)}>{s.label}</button>
+            <div style={{display:"flex",gap:7,marginBottom:20,flexWrap:"wrap"}}>
+              {[{id:"date",l:"Recent"},{id:"rating",l:"Top rated"},{id:"author",l:"Author"},{id:"category",l:"Category"}].map(s=>(
+                <button key={s.id} className={`chip ${shelfSort===s.id?"on":""}`} onClick={()=>setShelfSort(s.id)}>{s.l}</button>
               ))}
             </div>
           )}
 
           {finishedCount===0?(
             <div style={{textAlign:"center",padding:"5rem 1rem"}}>
-              <div style={{width:80,height:80,borderRadius:"50%",margin:"0 auto 20px",
-                background:"rgba(124,58,237,0.08)",border:"0.5px solid rgba(124,58,237,0.15)",
-                display:"flex",alignItems:"center",justifyContent:"center"}}>
-                <Archive size={36} color="rgba(45,31,74,0.8)"/>
-              </div>
-              <p style={{color:"rgba(61,47,92,0.9)",fontSize:14,fontFamily:"'Crimson Pro',serif",
-                fontStyle:"italic",marginBottom:6}}>Your shelf is empty</p>
-              <p style={{fontFamily:"'Space Mono',monospace",fontSize:11,color:"rgba(45,31,74,0.8)"}}>
-                Finish a book to see it here
-              </p>
+              <Archive size={44} color="var(--t3)" style={{margin:"0 auto 16px"}}/>
+              <p style={{fontSize:14,color:"var(--t2)",marginBottom:4}}>Your shelf is empty</p>
+              <p style={{fontSize:12,color:"var(--t3)"}}>Finish a book to see it here</p>
             </div>
           ):(
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
@@ -1381,65 +1627,59 @@ export default function App() {
                 const sel=selectedShelfBook?.id===book.id;
                 const finDate=book.finished_at?new Date(book.finished_at).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}):null;
                 return (
-                  <div key={book.id} className="fade-up" style={{animationDelay:`${i*0.05}s`,
-                    background:"rgba(17,13,26,0.75)",borderRadius:16,overflow:"hidden",
-                    border:`0.5px solid ${sel?"rgba(124,58,237,0.5)":"rgba(45,31,74,0.7)"}`,
-                    transition:"border-color 0.2s,box-shadow 0.2s",
-                    boxShadow:sel?"0 0 24px rgba(124,58,237,0.18)":"none",
-                    backdropFilter:"blur(12px)"}}>
-                    <div style={{display:"flex",gap:14,padding:"1.1rem",cursor:"pointer",alignItems:"flex-start"}}
+                  <div key={book.id} className="fade-up" style={{animationDelay:`${i*.05}s`,
+                    background:"var(--bg3)",border:`1px solid ${sel?"var(--green)":"var(--border)"}`,
+                    borderRadius:16,overflow:"hidden",
+                    transition:"border-color .2s,box-shadow .2s",
+                    boxShadow:sel?"0 0 0 3px var(--green-dim)":"none"}}>
+                    <div style={{display:"flex",gap:14,padding:14,cursor:"pointer",alignItems:"flex-start"}}
                       onClick={()=>setSelectedShelfBook(sel?null:book)}>
                       <BookCover book={book} size="sm"/>
                       <div style={{flex:1,minWidth:0}}>
-                        <p style={{fontSize:"1rem",fontWeight:600,color:"#f5f0ff",lineHeight:1.3,marginBottom:4}}>
-                          {book.title}
-                        </p>
+                        <p style={{fontWeight:600,fontSize:14,color:"var(--t1)",lineHeight:1.3,marginBottom:4}}>{book.title}</p>
                         {book.author&&book.author!=="Unknown Author"&&(
                           <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:6}}>
-                            <User size={10} color="rgba(124,100,154,0.7)"/>
-                            <p style={{fontSize:12,color:"rgba(124,100,154,0.8)",fontStyle:"italic"}}>{book.author}</p>
+                            <User size={10} color="var(--t3)"/>
+                            <p style={{fontSize:12,color:"var(--t2)",fontStyle:"italic"}}>{book.author}</p>
                           </div>
                         )}
-                        <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap",marginBottom:8}}>
+                        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
                           {book.category&&book.category!=="Uncategorized"&&(
-                            <span style={{fontFamily:"'Space Mono',monospace",fontSize:9,color:"rgba(124,58,237,0.9)",
-                              background:"rgba(124,58,237,0.1)",borderRadius:10,padding:"2px 8px",
-                              display:"flex",alignItems:"center",gap:4}}>
+                            <span style={{background:"var(--green-dim)",borderRadius:20,padding:"2px 8px",
+                              fontSize:10,fontWeight:600,color:"var(--green)",display:"flex",alignItems:"center",gap:3}}>
                               <Tag size={8}/>{book.category}
                             </span>
                           )}
-                          {finDate&&<span style={{fontFamily:"'Space Mono',monospace",fontSize:9,color:"rgba(74,58,104,0.9)"}}>{finDate}</span>}
+                          {finDate&&<span style={{fontSize:10,color:"var(--t3)"}}>{finDate}</span>}
                         </div>
                         {j?.rating>0?<StarRow value={j.rating} readonly/>
-                          :<p style={{fontFamily:"'Space Mono',monospace",fontSize:9,color:"rgba(45,31,74,0.9)"}}>No rating yet</p>}
+                          :<p style={{fontSize:10,color:"var(--t3)"}}>No rating yet</p>}
                       </div>
-                      <div style={{color:"rgba(74,58,104,0.9)",flexShrink:0,marginTop:4}}>
+                      <div style={{color:"var(--t3)",flexShrink:0,marginTop:4}}>
                         {sel?<ChevronUp size={14}/>:<ChevronDown size={14}/>}
                       </div>
                     </div>
-
                     {sel&&(
-                      <div style={{borderTop:"0.5px solid rgba(45,31,74,0.7)",padding:"1rem",
-                        animation:"dropIn 0.18s ease",background:"rgba(12,8,22,0.5)"}}>
+                      <div style={{borderTop:"1px solid var(--border)",padding:14,
+                        animation:"slideDown .18s var(--sp)"}}>
                         {j&&(j.learned||j.takeaways)&&(
-                          <div style={{marginBottom:12,padding:"10px 12px",
-                            background:"rgba(124,58,237,0.06)",borderRadius:10,
-                            borderLeft:"2px solid rgba(192,132,252,0.3)"}}>
-                            <p style={{fontFamily:"'Crimson Pro',serif",fontSize:13,color:"rgba(155,124,200,0.9)",
-                              lineHeight:1.6,fontStyle:"italic"}}>
+                          <div style={{background:"var(--bg3)",borderLeft:"2px solid var(--green)",
+                            borderRadius:"0 8px 8px 0",padding:"10px 12px",marginBottom:12}}>
+                            <p style={{fontFamily:"Crimson Pro,Georgia,serif",fontSize:13,color:"var(--t2)",
+                              fontStyle:"italic",lineHeight:1.6}}>
                               "{(j.learned||j.takeaways).substring(0,140)}{(j.learned||j.takeaways).length>140?"…":""}"
                             </p>
                           </div>
                         )}
                         <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                          <button onClick={()=>openBook(book)} className="btn-glass" style={{flex:1,fontSize:10,minWidth:100}}>
-                            <Play size={12}/> Listen again
+                          <button onClick={()=>openBook(book)} className="btn btn-ghost" style={{flex:1,minWidth:90,padding:"9px 0",fontSize:11}}>
+                            <Play size={12}/> Listen
                           </button>
-                          <button onClick={()=>openJournal(book)} className="btn-glass" style={{flex:1,fontSize:10,minWidth:100}}>
-                            <PenLine size={12}/> {j?"View journal":"Write journal"}
+                          <button onClick={()=>openJournal(book)} className="btn btn-ghost" style={{flex:1,minWidth:90,padding:"9px 0",fontSize:11}}>
+                            <PenLine size={12}/> {j?"Journal":"Write"}
                           </button>
-                          <button onClick={()=>{if(confirm("Restart this book? Progress will reset."))repeatBook(book);}}
-                            className="btn-ghost" style={{flex:1,fontSize:10,minWidth:100}}>
+                          <button onClick={()=>{if(confirm("Restart this book?"))repeatBook(book);}}
+                            className="btn btn-ghost" style={{flex:1,minWidth:90,padding:"9px 0",fontSize:11}}>
                             <RotateCcw size={12}/> Restart
                           </button>
                         </div>
@@ -1453,129 +1693,100 @@ export default function App() {
         </div>
       )}
 
-      {/* ════════════════════════════════════════════════════════ JOURNAL */}
+      {/* ════ JOURNAL ════════════════════════════════════════════════════════ */}
       {screen==="journal"&&journalBook&&(
-        <div style={{maxWidth:580,margin:"0 auto",padding:"2rem 1rem",position:"relative",zIndex:1}}>
-          <button className="btn-ghost" onClick={()=>setScreen(fromScreen)} style={{marginBottom:"1.75rem",gap:8}}>
-            <ArrowLeft size={14}/> Back
+        <div style={{maxWidth:560,margin:"0 auto",padding:"20px 16px",position:"relative",zIndex:1}}>
+          <button className="btn btn-icon" onClick={()=>setScreen(fromScreen)} style={{marginBottom:22}}>
+            <ArrowLeft size={16}/>
           </button>
-
-          <div style={{display:"flex",gap:14,alignItems:"flex-start",marginBottom:"2rem"}}>
+          <div style={{display:"flex",gap:14,alignItems:"flex-start",marginBottom:24}}>
             <BookCover book={journalBook} size="md"/>
             <div>
-              <p style={{fontFamily:"'Space Mono',monospace",fontSize:10,letterSpacing:"0.2em",
-                color:"rgba(192,132,252,0.8)",textTransform:"uppercase",marginBottom:8,
-                display:"flex",alignItems:"center",gap:6}}><PenLine size={11}/> Book journal</p>
-              <h2 style={{fontSize:"clamp(1rem,3.5vw,1.4rem)",fontWeight:300,color:"#f5f0ff",
-                lineHeight:1.3,marginBottom:6}}>{journalBook.title}</h2>
+              <p className="lbl" style={{color:"var(--green)"}}>book journal</p>
+              <h2 style={{fontSize:"1.2rem",fontWeight:700,color:"var(--t1)",lineHeight:1.3,marginBottom:5}}>{journalBook.title}</h2>
               {journalBook.author&&journalBook.author!=="Unknown Author"&&(
-                <p style={{fontSize:13,color:"rgba(124,100,154,0.8)",fontStyle:"italic",marginBottom:12}}>{journalBook.author}</p>
+                <p style={{fontSize:12,color:"var(--t2)",fontStyle:"italic",marginBottom:12}}>{journalBook.author}</p>
               )}
               <StarRow value={journalForm.rating} onChange={r=>setJournalForm(p=>({...p,rating:r}))}/>
             </div>
           </div>
-
           <div style={{display:"flex",flexDirection:"column",gap:20}}>
             {[
-              {key:"learned", Icon:Lightbulb, title:"What I learned", hint:"New ideas and perspectives this book gave you"},
-              {key:"takeaways", Icon:Star, title:"Key takeaways", hint:"Quotes, moments, and concepts to remember"},
-              {key:"actions", Icon:Rocket, title:"Action steps", hint:"What will you actually do differently now?"},
+              {key:"learned",Icon:Lightbulb,title:"What I learned",hint:"New ideas and perspectives"},
+              {key:"takeaways",Icon:Star,title:"Key takeaways",hint:"Quotes and moments to remember"},
+              {key:"actions",Icon:Rocket,title:"Action steps",hint:"What will you actually do differently?"},
             ].map(({key,Icon,title,hint})=>(
               <div key={key}>
-                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
-                  <div style={{width:34,height:34,borderRadius:10,
-                    background:"rgba(124,58,237,0.15)",border:"0.5px solid rgba(124,58,237,0.2)",
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+                  <div style={{width:34,height:34,borderRadius:10,background:"var(--green-dim)",
                     display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    <Icon size={16} color="rgba(192,132,252,0.9)"/>
+                    <Icon size={16} color="var(--green)"/>
                   </div>
                   <div>
-                    <p style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"#c084fc",
-                      textTransform:"uppercase",letterSpacing:"0.14em",marginBottom:2}}>{title}</p>
-                    <p style={{fontFamily:"'Space Mono',monospace",fontSize:9,color:"rgba(74,58,104,0.9)"}}>{hint}</p>
+                    <p style={{fontWeight:600,fontSize:13,color:"var(--t1)",marginBottom:2}}>{title}</p>
+                    <p style={{fontSize:11,color:"var(--t3)"}}>{hint}</p>
                   </div>
                 </div>
-                <textarea className="journal-ta" rows={4}
-                  value={journalForm[key]}
+                <textarea className="inp ta" rows={4} value={journalForm[key]}
                   onChange={e=>setJournalForm(p=>({...p,[key]:e.target.value}))}
-                  placeholder={
-                    key==="learned"?"What shifted in your thinking after reading this?":
-                    key==="takeaways"?"• Memorable quotes or passages\n• Concepts to remember":
-                    "1. Start doing…\n2. Stop doing…\n3. Change how I…"
-                  }/>
+                  placeholder={key==="learned"?"What shifted in your thinking…":
+                    key==="takeaways"?"• Notable passages\n• Key concepts…":
+                    "1. Start doing…\n2. Stop doing…"}/>
               </div>
             ))}
           </div>
-
           <button onClick={saveJournal} disabled={savingJournal}
-            style={{width:"100%",marginTop:"1.75rem",
-              background:"linear-gradient(135deg,#7c3aed,#9333ea)",border:"none",borderRadius:14,
-              color:"#f5f0ff",cursor:"pointer",padding:"15px",
-              fontFamily:"'Space Mono',monospace",fontSize:11,fontWeight:700,
-              display:"flex",alignItems:"center",justifyContent:"center",gap:9,
-              opacity:savingJournal?0.65:1,transition:"opacity 0.2s,transform 0.15s"}}>
-            {savingJournal
-              ?<><div style={{width:13,height:13,border:"2px solid #f5f0ff",borderTopColor:"transparent",
-                  borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/> Saving…</>
-              :<><CheckCircle2 size={14}/> Save journal entry</>}
+            className="btn btn-green" style={{width:"100%",marginTop:24,padding:14,borderRadius:12,fontSize:13}}>
+            {savingJournal?<><div style={{width:13,height:13,border:"2px solid #000",borderTopColor:"transparent",
+              borderRadius:"50%",animation:"spin .8s linear infinite"}}/> Saving…</>
+            :<><CheckCircle2 size={14}/> Save journal</>}
           </button>
         </div>
       )}
 
-      {/* ════════════════════════════════════════════════════════ GOALS */}
+      {/* ════ GOALS ══════════════════════════════════════════════════════════ */}
       {screen==="goals"&&(
-        <div style={{maxWidth:580,margin:"0 auto",padding:"2.5rem 1rem 1rem",position:"relative",zIndex:1}}>
-          <div style={{marginBottom:"1.75rem"}}>
-            <p style={{fontFamily:"'Space Mono',monospace",fontSize:10,letterSpacing:"0.25em",
-              color:"rgba(192,132,252,0.8)",textTransform:"uppercase",marginBottom:8}}>reading goals</p>
-            <h2 style={{fontSize:"clamp(1.4rem,5vw,2.2rem)",fontWeight:300,color:"#f5f0ff",
-              background:"linear-gradient(135deg,#f5f0ff,#c084fc)",
-              WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
-              {thisYear} Goal
-            </h2>
-          </div>
+        <div style={{maxWidth:560,margin:"0 auto",padding:"24px 16px 8px",position:"relative",zIndex:1}}>
+          <p className="lbl" style={{color:"var(--green)"}}>reading goals</p>
+          <h2 style={{fontSize:"clamp(1.4rem,5vw,2rem)",fontWeight:700,color:"var(--t1)",marginBottom:24}}>{thisYear} Goal</h2>
 
-          {/* Ring */}
+          {/* Ring card */}
           <div className="card" style={{display:"flex",flexDirection:"column",alignItems:"center",
-            marginBottom:14,padding:"2.5rem 2rem",animation:"fadeUp 0.4s ease both"}}>
-            <div style={{position:"relative",marginBottom:"1.75rem"}}>
-              <CircleRing value={booksThisYear.length} max={GOAL} size={170} stroke={14}/>
+            marginBottom:12,padding:"2.5rem",animation:"fadeUp .4s var(--ease) both"}}>
+            <div style={{position:"relative",marginBottom:20}}>
+              <CircleRing value={booksThisYear.length} max={GOAL}/>
               <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",
                 alignItems:"center",justifyContent:"center"}}>
-                <p style={{fontSize:"3rem",fontWeight:300,color:"#f5f0ff",lineHeight:1,
-                  background:"linear-gradient(135deg,#f5f0ff,#c084fc)",
-                  WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
+                <p style={{fontSize:"2.8rem",fontWeight:700,color:"var(--green)",lineHeight:1}}>
                   {booksThisYear.length}
                 </p>
-                <p style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"rgba(124,100,154,0.8)"}}>of {GOAL}</p>
+                <p style={{fontSize:11,color:"var(--t3)",fontWeight:600}}>of {GOAL}</p>
               </div>
             </div>
-            <p style={{fontFamily:"'Crimson Pro',serif",fontSize:"1.1rem",color:"rgba(155,124,200,0.9)",
-              fontStyle:"italic",textAlign:"center",marginBottom:8}}>
-              {booksThisYear.length===0?"Your journey starts with the first page"
-                :booksThisYear.length<GOAL/2?"You're building momentum, Victory!"
-                :booksThisYear.length<GOAL?`${GOAL-booksThisYear.length} more to go — you've got this!`
-                :"Goal achieved! You're a reading queen"}
+            <p style={{fontFamily:"Crimson Pro,Georgia,serif",fontSize:"1.05rem",color:"var(--t2)",
+              fontStyle:"italic",textAlign:"center",marginBottom:6}}>
+              {booksThisYear.length===0?"Start your journey, Victory":
+                booksThisYear.length<6?"You're building momentum!":
+                booksThisYear.length<12?`${GOAL-booksThisYear.length} more to go — keep going!`:
+                "Goal achieved! You're unstoppable"}
             </p>
-            <p style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"rgba(74,58,104,0.9)"}}>
-              {Math.round(booksThisYear.length/GOAL*100)}% complete
-            </p>
+            <p style={{fontSize:12,color:"var(--t3)",fontWeight:600}}>{Math.round(booksThisYear.length/GOAL*100)}% complete</p>
 
             {/* Milestones */}
-            <div style={{display:"flex",gap:20,marginTop:"2rem",justifyContent:"center"}}>
-              {[{n:3,Icon:TrendingUp,label:"Momentum"},{n:6,Icon:Star,label:"Halfway"},{n:9,Icon:BarChart2,label:"Almost"},{n:12,Icon:Trophy,label:"Champion"}].map(m=>{
+            <div style={{display:"flex",gap:16,marginTop:24,justifyContent:"center"}}>
+              {[{n:3,Icon:TrendingUp,l:"Spark"},{n:6,Icon:Star,l:"Halfway"},{n:9,Icon:BarChart2,l:"Almost"},{n:12,Icon:Trophy,l:"Legend"}].map(m=>{
                 const done=booksThisYear.length>=m.n;
                 return (
-                  <div key={m.n} style={{textAlign:"center",transition:"opacity 0.4s",
-                    opacity:done?1:0.25,filter:done?"none":"grayscale(1)"}}>
+                  <div key={m.n} style={{textAlign:"center",opacity:done?1:.25,
+                    filter:done?"none":"grayscale(1)",transition:"opacity .5s,filter .5s"}}>
                     <div style={{width:44,height:44,borderRadius:12,margin:"0 auto 6px",
-                      background:done?"linear-gradient(135deg,#7c3aed,#c084fc)":"rgba(45,31,74,0.5)",
+                      background:done?"var(--green)":"var(--bg3)",
                       display:"flex",alignItems:"center",justifyContent:"center",
-                      boxShadow:done?"0 0 16px rgba(192,132,252,0.35)":"none",
-                      transition:"all 0.4s"}}>
-                      <m.Icon size={20} color={done?"#f5f0ff":"rgba(74,58,104,0.8)"}/>
+                      boxShadow:done?"0 4px 20px var(--green-glow)":"none",transition:"all .5s"}}>
+                      <m.Icon size={20} color={done?"#000":"var(--t3)"}/>
                     </div>
-                    <p style={{fontFamily:"'Space Mono',monospace",fontSize:8,
-                      color:done?"rgba(192,132,252,0.9)":"rgba(74,58,104,0.8)"}}>{m.label}</p>
+                    <p style={{fontSize:9,color:done?"var(--green)":"var(--t3)",fontWeight:700,
+                      textTransform:"uppercase",letterSpacing:".06em"}}>{m.l}</p>
                   </div>
                 );
               })}
@@ -1583,46 +1794,40 @@ export default function App() {
           </div>
 
           {/* Monthly bars */}
-          <div className="card" style={{marginBottom:14}}>
-            <p style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"rgba(124,100,154,0.8)",
-              textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:"1.5rem",
-              display:"flex",alignItems:"center",gap:6}}>
-              Monthly breakdown
-            </p>
-            <div style={{display:"flex",gap:6,alignItems:"flex-end",height:80}}>
+          <div className="card" style={{marginBottom:12}}>
+            <p className="lbl" style={{marginBottom:16}}>Monthly breakdown</p>
+            <div style={{display:"flex",gap:5,alignItems:"flex-end",height:80}}>
               {monthBreak.map((m,i)=>{
                 const past=i<=new Date().getMonth();
-                const barH=m.count>0?Math.max(16,(m.count/maxMo)*68):past?3:2;
+                const h=m.count>0?Math.max(18,(m.count/maxMo)*68):past?4:2;
                 return (
                   <div key={m.label} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:5}}>
-                    <div style={{width:"100%",height:barH,borderRadius:4,
-                      background:m.count>0?"linear-gradient(180deg,#c084fc,#7c3aed)":past?"rgba(45,31,74,0.5)":"rgba(30,21,48,0.5)",
-                      transition:"height 0.8s cubic-bezier(.34,1.56,.64,1)",minHeight:2}}/>
-                    <p style={{fontFamily:"'Space Mono',monospace",fontSize:7,
-                      color:m.count>0?"rgba(192,132,252,0.9)":past?"rgba(61,47,92,0.9)":"rgba(45,31,74,0.7)"}}>{m.label}</p>
-                    {m.count>0&&<p style={{fontFamily:"'Space Mono',monospace",fontSize:7,color:"rgba(124,100,154,0.9)"}}>{m.count}</p>}
+                    <div style={{width:"100%",height:h,borderRadius:4,
+                      background:m.count>0?"var(--green)":past?"var(--bg3h)":"var(--bg3)",
+                      transition:"height .8s var(--sp)",minHeight:2}}/>
+                    <p style={{fontSize:7,fontWeight:600,color:m.count>0?"var(--green)":past?"var(--t3)":"var(--bg3h)",
+                      textTransform:"uppercase",letterSpacing:".04em"}}>{m.label}</p>
+                    {m.count>0&&<p style={{fontSize:8,color:"var(--green)",fontWeight:700}}>{m.count}</p>}
                   </div>
                 );
               })}
             </div>
           </div>
 
-          {/* All-time stats */}
+          {/* Stats grid */}
           {finishedCount>0&&(
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
               {[
-                {Icon:BookOpen,label:"All-time",value:finishedCount},
-                {Icon:Clock,label:"Hours",value:`${totalHours}h`},
-                {Icon:TrendingUp,label:"Per month",value:(finishedCount/Math.max(1,new Date().getMonth()+1)).toFixed(1)},
+                {Icon:BookOpen,label:"All-time books",value:finishedCount},
+                {Icon:Clock,label:"Hours listened",value:`${totalHours}h`},
+                {Icon:TrendingUp,label:"Per month avg",value:(finishedCount/Math.max(1,new Date().getMonth()+1)).toFixed(1)},
                 {Icon:Trophy,label:"This year",value:booksThisYear.length},
               ].map((s,i)=>(
-                <div key={i} className="card" style={{textAlign:"center",padding:"1.25rem",
-                  animation:`fadeUp 0.4s ease ${i*0.08}s both`}}>
-                  <s.Icon size={18} color="rgba(192,132,252,0.6)" style={{margin:"0 auto 8px"}}/>
-                  <p style={{fontSize:"2rem",fontWeight:300,color:"#c084fc",lineHeight:1,marginBottom:6,
-                    background:"linear-gradient(135deg,#c084fc,#a855f7)",
-                    WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>{s.value}</p>
-                  <p style={{fontFamily:"'Space Mono',monospace",fontSize:9,color:"rgba(74,58,104,0.9)"}}>{s.label}</p>
+                <div key={i} className="card" style={{textAlign:"center",padding:"18px 14px",
+                  animation:`fadeUp .4s var(--ease) ${i*.07}s both`}}>
+                  <s.Icon size={17} color="var(--green)" style={{margin:"0 auto 8px"}}/>
+                  <p style={{fontSize:"2rem",fontWeight:700,color:"var(--green)",lineHeight:1,marginBottom:5}}>{s.value}</p>
+                  <p style={{fontSize:9,color:"var(--t3)",fontWeight:600,textTransform:"uppercase",letterSpacing:".07em"}}>{s.label}</p>
                 </div>
               ))}
             </div>
@@ -1630,21 +1835,16 @@ export default function App() {
         </div>
       )}
 
-      {/* ════════════════════════════════════════════════════════ WRAPPED */}
+      {/* ════ WRAPPED ════════════════════════════════════════════════════════ */}
       {screen==="wrapped"&&(
-        <div style={{maxWidth:580,margin:"0 auto",padding:"2.5rem 1rem 1rem",position:"relative",zIndex:1}}>
-          <div style={{marginBottom:"1.5rem"}}>
-            <p style={{fontFamily:"'Space Mono',monospace",fontSize:10,letterSpacing:"0.25em",
-              color:"rgba(192,132,252,0.8)",textTransform:"uppercase",marginBottom:8}}>analytics</p>
-            <h2 style={{fontSize:"clamp(1.4rem,5vw,2.2rem)",fontWeight:300,color:"#f5f0ff",
-              background:"linear-gradient(135deg,#f5f0ff,#c084fc)",
-              WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
-              Victory Wrapped
-            </h2>
-          </div>
+        <div style={{maxWidth:560,margin:"0 auto",padding:"24px 16px 8px",position:"relative",zIndex:1}}>
+          <p className="lbl" style={{color:"var(--green)"}}>analytics</p>
+          <h2 style={{fontSize:"clamp(1.4rem,5vw,2rem)",fontWeight:700,color:"var(--t1)",marginBottom:16}}>
+            Victory Wrapped
+          </h2>
 
-          {/* Period selector */}
-          <div style={{display:"flex",gap:8,marginBottom:"1.75rem"}}>
+          {/* Period */}
+          <div style={{display:"flex",gap:7,marginBottom:22}}>
             {["week","month","quarter","year"].map(p=>(
               <button key={p} className={`chip ${wrappedPeriod===p?"on":""}`}
                 onClick={()=>setWrappedPeriod(p)} style={{flex:1,justifyContent:"center",textTransform:"capitalize"}}>
@@ -1655,103 +1855,62 @@ export default function App() {
 
           {periodBooks.length===0?(
             <div style={{textAlign:"center",padding:"4rem 1rem"}}>
-              <div style={{width:72,height:72,borderRadius:"50%",margin:"0 auto 18px",
-                background:"rgba(124,58,237,0.08)",border:"0.5px solid rgba(124,58,237,0.15)",
-                display:"flex",alignItems:"center",justifyContent:"center"}}>
-                <BarChart2 size={32} color="rgba(45,31,74,0.8)"/>
-              </div>
-              <p style={{color:"rgba(61,47,92,0.9)",fontFamily:"'Crimson Pro',serif",
-                fontSize:"1.05rem",fontStyle:"italic",marginBottom:6}}>
-                No finished books this {wrappedPeriod}
-              </p>
-              <p style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"rgba(45,31,74,0.8)"}}>
-                Keep listening — your stats will appear here
-              </p>
+              <BarChart2 size={44} color="var(--t3)" style={{margin:"0 auto 16px"}}/>
+              <p style={{fontSize:14,color:"var(--t2)",marginBottom:4}}>No data for this period</p>
+              <p style={{fontSize:12,color:"var(--t3)"}}>Finish books to see your stats</p>
             </div>
           ):(
             <>
               {[
-                {bg:"linear-gradient(145deg,#1a0536,#3b0764)",accent:"rgba(192,132,252,0.75)",
-                  Icon:BookOpen,label:"Books read",value:periodBooks.length,
-                  sub:periodBooks.length===1?"One down, many to go":"books of pure wisdom"},
-                {bg:"linear-gradient(145deg,#0c1445,#1e3a8a)",accent:"rgba(147,197,253,0.75)",
-                  Icon:Clock,label:"Hours absorbed",value:periodHours,
-                  sub:"hours of knowledge, Victory"},
-                topCats.length>0&&{bg:"linear-gradient(145deg,#0a2014,#14532d)",accent:"rgba(134,239,172,0.75)",
-                  Icon:Tag,label:"Top category",value:topCats[0][0],
-                  sub:`${topCats[0][1]} ${topCats[0][1]===1?"book":"books"} in this category`,isText:true},
-                topAuthors.length>0&&{bg:"linear-gradient(145deg,#2d0836,#581c87)",accent:"rgba(216,180,254,0.75)",
-                  Icon:User,label:"Favourite author",value:topAuthors[0][0],
-                  sub:`${topAuthors[0][1]} ${topAuthors[0][1]===1?"book":"books"} listened`,isText:true},
-                wrappedPeriod==="year"&&{bg:"linear-gradient(145deg,#1c1917,#44403c)",accent:"rgba(214,211,209,0.75)",
-                  Icon:Trophy,label:"Goal progress",value:`${Math.round(booksThisYear.length/GOAL*100)}%`,
-                  sub:`${booksThisYear.length} of ${GOAL} books`,isText:true},
+                {bg:"linear-gradient(135deg,#0a1f0a,#0d3320)",Icon:BookOpen,label:"Books read",value:periodBooks.length,sub:"in this period"},
+                {bg:"linear-gradient(135deg,#0a0f1f,#0d1a40)",Icon:Clock,label:"Hours absorbed",value:periodHours,sub:"hours of knowledge"},
+                topCats.length>0&&{bg:"linear-gradient(135deg,#1a0a1f,#2a0a40)",Icon:Tag,label:"Top category",value:topCats[0][0],sub:`${topCats[0][1]} books`},
+                topAuthors.length>0&&{bg:"linear-gradient(135deg,#1a1a0a,#2a2a00)",Icon:User,label:"Fav author",value:topAuthors[0][0],sub:`${topAuthors[0][1]} books`},
               ].filter(Boolean).map((card,i)=>(
-                <div key={i} className="wrapped-card fade-up" style={{background:card.bg,animationDelay:`${i*0.08}s`}}>
-                  <div style={{position:"absolute",top:-30,right:-30,width:120,height:120,
-                    borderRadius:"50%",background:"rgba(255,255,255,0.03)",filter:"blur(20px)"}}/>
-                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
-                    <card.Icon size={14} color={card.accent}/>
-                    <p style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:card.accent,
-                      textTransform:"uppercase",letterSpacing:"0.18em"}}>{card.label}</p>
+                <div key={i} className="wrapped-hero fade-up" style={{background:card.bg,animationDelay:`${i*.07}s`}}>
+                  <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:10}}>
+                    <card.Icon size={13} color="var(--green)"/>
+                    <p className="lbl" style={{margin:0,color:"var(--green)"}}>{card.label}</p>
                   </div>
-                  <p style={{fontSize:card.isText?"2rem":"4rem",fontWeight:300,color:"#f5f0ff",
-                    lineHeight:1.1,marginBottom:10}}>{card.value}</p>
-                  <p style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:card.accent}}>{card.sub}</p>
+                  <p style={{fontSize:"2.8rem",fontWeight:700,color:"var(--t1)",lineHeight:1.1,marginBottom:8}}>
+                    {card.value}
+                  </p>
+                  <p style={{fontSize:12,color:"var(--t2)"}}>{card.sub}</p>
                 </div>
               ))}
 
-              {/* Category breakdown */}
               {topCats.length>1&&(
                 <div className="card" style={{marginBottom:12}}>
-                  <p style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"rgba(124,100,154,0.8)",
-                    textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:"1.25rem",
-                    display:"flex",alignItems:"center",gap:6}}><Tag size={11}/>Categories</p>
-                  <div style={{display:"flex",flexDirection:"column",gap:12}}>
-                    {topCats.map(([cat,cnt])=>(
-                      <div key={cat}>
-                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                          <span style={{fontFamily:"'Crimson Pro',serif",fontSize:15,color:"#f5f0ff"}}>{cat}</span>
-                          <span style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"#c084fc"}}>{cnt}</span>
-                        </div>
-                        <div className="prog-track thick">
-                          <div className="prog-fill" style={{width:`${(cnt/topCats[0][1])*100}%`}}/>
-                        </div>
+                  <p className="lbl" style={{marginBottom:14}}><Tag size={11} style={{display:"inline",marginRight:5}}/>Categories</p>
+                  {topCats.map(([cat,cnt])=>(
+                    <div key={cat} style={{marginBottom:12}}>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                        <span style={{fontSize:14,color:"var(--t1)",fontFamily:"Crimson Pro,Georgia,serif"}}>{cat}</span>
+                        <span style={{fontSize:11,color:"var(--green)",fontWeight:700}}>{cnt}</span>
                       </div>
-                    ))}
-                  </div>
+                      <div className="prog"><div className="prog-fill" style={{width:`${(cnt/topCats[0][1])*100}%`}}/></div>
+                    </div>
+                  ))}
                 </div>
               )}
 
-              {/* Author breakdown */}
               {topAuthors.length>1&&(
                 <div className="card" style={{marginBottom:12}}>
-                  <p style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"rgba(124,100,154,0.8)",
-                    textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:"1.25rem",
-                    display:"flex",alignItems:"center",gap:6}}><User size={11}/>Authors</p>
-                  <div style={{display:"flex",flexDirection:"column",gap:12}}>
-                    {topAuthors.map(([auth,cnt])=>(
-                      <div key={auth}>
-                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                          <span style={{fontFamily:"'Crimson Pro',serif",fontSize:15,color:"#f5f0ff"}}>{auth}</span>
-                          <span style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"#c084fc"}}>{cnt}</span>
-                        </div>
-                        <div className="prog-track thick">
-                          <div className="prog-fill" style={{width:`${(cnt/topAuthors[0][1])*100}%`}}/>
-                        </div>
+                  <p className="lbl" style={{marginBottom:14}}><User size={11} style={{display:"inline",marginRight:5}}/>Authors</p>
+                  {topAuthors.map(([auth,cnt])=>(
+                    <div key={auth} style={{marginBottom:12}}>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                        <span style={{fontSize:14,color:"var(--t1)",fontFamily:"Crimson Pro,Georgia,serif"}}>{auth}</span>
+                        <span style={{fontSize:11,color:"var(--green)",fontWeight:700}}>{cnt}</span>
                       </div>
-                    ))}
-                  </div>
+                      <div className="prog"><div className="prog-fill" style={{width:`${(cnt/topAuthors[0][1])*100}%`}}/></div>
+                    </div>
+                  ))}
                 </div>
               )}
 
-              {/* Cover strip */}
               <div className="card">
-                <p style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"rgba(124,100,154,0.8)",
-                  textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:"1.25rem",
-                  display:"flex",alignItems:"center",gap:6}}>
-                  <BookOpen size={11}/> Finished this {wrappedPeriod}
-                </p>
+                <p className="lbl" style={{marginBottom:14}}><BookOpen size={11} style={{display:"inline",marginRight:5}}/>Finished this {wrappedPeriod}</p>
                 <div style={{display:"flex",gap:10,overflowX:"auto",paddingBottom:6}}>
                   {periodBooks.map(b=>(
                     <BookCover key={b.id} book={b} size="sm"
