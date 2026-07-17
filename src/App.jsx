@@ -95,19 +95,33 @@ async function extractTextFromPDF(file) {
 }
 
 function splitToLines(text, maxChars=130) {
-  if(!text) return [];
-  const sentences=text.split(/(?<=[.!?…])\s+/).filter(s=>s.trim());
+  if(!text||!text.trim()) return [];
+  // Safari-safe sentence split — no lookbehind
+  const raw=[];
+  let buf='';
+  for(let i=0;i<text.length;i++){
+    buf+=text[i];
+    const c=text[i];
+    if((c==='.'||c==='!'||c==='?'||c==='…')){
+      const next=text[i+1];
+      if(!next||next===' '||next==='\n'){
+        if(buf.trim()) raw.push(buf.trim());
+        buf='';
+      }
+    }
+  }
+  if(buf.trim()) raw.push(buf.trim());
+  const sentences=raw.length>0?raw:[text.trim()];
   const lines=[];
   for(const s of sentences){
     const t=s.trim();
     if(!t) continue;
     if(t.length<=maxChars){lines.push(t);continue;}
-    // break long sentence at punctuation near midpoint, else at word boundary
     const mid=Math.ceil(t.length/2);
     const comma=t.indexOf(',',mid-30);
     if(comma>0&&comma<mid+40){
       lines.push(t.slice(0,comma+1).trim());
-      lines.push(t.slice(comma+1).trim());
+      if(t.slice(comma+1).trim()) lines.push(t.slice(comma+1).trim());
     }else{
       const words=t.split(' ');
       const half=Math.ceil(words.length/2);
@@ -685,14 +699,21 @@ function LyricsView({chunks,currentChunk,currentTime,duration,isPlaying,onClose,
     return Math.min(Math.floor((currentTime/duration)*lines.length),lines.length-1);
   },[currentTime,duration,lines.length]);
 
-  // Programmatically center the active line — no manual scroll needed
+  // Programmatically center the active line — no manual scroll needed.
+  // Use a small timeout so the DOM is fully painted before we measure.
+  // Use instant scroll on first mount (activeLine===0 && currentTime<0.5) to avoid
+  // the view starting blank at the top spacer.
   useEffect(()=>{
-    const scroller=scrollRef.current;
-    const el=lineRefs.current[activeLine];
-    if(!scroller||!el) return;
-    const scrollerMid=scroller.offsetHeight/2;
-    const elMid=el.offsetTop+el.offsetHeight/2;
-    scroller.scrollTo({top:elMid-scrollerMid,behavior:"smooth"});
+    const tid=setTimeout(()=>{
+      const scroller=scrollRef.current;
+      const el=lineRefs.current[activeLine];
+      if(!scroller||!el) return;
+      const scrollerMid=scroller.offsetHeight/2;
+      const elMid=el.offsetTop+el.offsetHeight/2;
+      const instant=activeLine===0&&(!currentTime||currentTime<0.5);
+      scroller.scrollTo({top:Math.max(0,elMid-scrollerMid),behavior:instant?"auto":"smooth"});
+    },60);
+    return()=>clearTimeout(tid);
   },[activeLine,currentChunk]);
 
   // Lock out manual scroll — the view is fully automatic
@@ -735,6 +756,14 @@ function LyricsView({chunks,currentChunk,currentTime,duration,isPlaying,onClose,
         <div ref={scrollRef} className="lyrics-scroller">
           {/* Top spacer so first line can reach center */}
           <div style={{height:"46vh"}}/>
+
+          {/* Fallback if sentence splitter produced nothing */}
+          {lines.length===0&&(
+            <div className="lyrics-line active" ref={el=>{lineRefs.current[0]=el;}}
+              style={{fontSize:"1.6rem",opacity:1,fontWeight:600}}>
+              {chunks[currentChunk]||""}
+            </div>
+          )}
 
           {lines.map((line,i)=>{
             const dist=Math.abs(i-activeLine);
